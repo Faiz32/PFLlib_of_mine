@@ -29,37 +29,51 @@ class clientProto(Client):
         super().__init__(args, id, train_samples, test_samples, **kwargs)
 
         self.protos = None
+        self.protos_var = None
         self.global_protos = None
         self.loss_mse = nn.MSELoss()
 
         self.lamda = args.lamda
 
-
     def train(self):
+        """
+        训练模型的过程。
+        此函数不接受参数，也不返回值。
+        """
+
+        # 加载训练数据
         trainloader = self.load_train_data()
         start_time = time.time()
 
-        # self.model.to(self.device)
+        # 将模型设置为训练模式
         self.model.train()
 
+        # 根据是否进行慢速训练，随机确定本地训练轮数
         max_local_epochs = self.local_epochs
         if self.train_slow:
             max_local_epochs = np.random.randint(1, max_local_epochs // 2)
 
         protos = defaultdict(list)
+        protos_var = defaultdict(list)
         for epoch in range(max_local_epochs):
             for i, (x, y) in enumerate(trainloader):
+                # 将数据移动到指定设备上
                 if type(x) == type([]):
                     x[0] = x[0].to(self.device)
                 else:
                     x = x.to(self.device)
                 y = y.to(self.device)
+
+                # 如果设置为慢速训练，则随机睡眠以模拟延迟
                 if self.train_slow:
                     time.sleep(0.1 * np.abs(np.random.rand()))
+
+                # 前向传播
                 rep = self.model.base(x)
                 output = self.model.head(rep)
                 loss = self.loss(output, y)
 
+                # 如果定义了全局原型，则在损失函数中加入对原型的更新
                 if self.global_protos is not None:
                     proto_new = copy.deepcopy(rep.detach())
                     for i, yy in enumerate(y):
@@ -68,35 +82,42 @@ class clientProto(Client):
                             proto_new[i, :] = self.global_protos[y_c].data
                     loss += self.loss_mse(proto_new, rep) * self.lamda
 
+                # 记录每个类别对应的特征表示
                 for i, yy in enumerate(y):
                     y_c = yy.item()
                     protos[y_c].append(rep[i, :].detach().data)
 
+                for protos_key, protos_value in protos.items():
+                    protos_var[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
+                    # protos_var[y_c].append(rep[i, :].detach().data.var())
+                    # print(protos_var[y_c])
+
+                # 反向传播和参数更新
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
-        # self.model.cpu()
-        # rep = self.model.base(x)
-        # print(torch.sum(rep!=0).item() / rep.numel())
-
-        # self.collect_protos()
+        # 更新全局原型并应用学习率衰减
         self.protos = agg_func(protos)
+        self.protos_var = agg_func(protos_var)
 
         if self.learning_rate_decay:
             self.learning_rate_scheduler.step()
 
+        # 更新训练时间统计
         self.train_time_cost['num_rounds'] += 1
         self.train_time_cost['total_cost'] += time.time() - start_time
-
 
     def set_protos(self, global_protos):
         self.global_protos = global_protos
 
+    def set_protos_var(self, global_protos_var):
+        # print("protos_var")
+        self.protos_var = global_protos_var
+
     def collect_protos(self):
         trainloader = self.load_train_data()
         self.model.eval()
-
         protos = defaultdict(list)
         with torch.no_grad():
             for i, (x, y) in enumerate(trainloader):
@@ -115,6 +136,7 @@ class clientProto(Client):
 
         self.protos = agg_func(protos)
 
+
     def test_metrics(self):
         testloaderfull = self.load_test_data()
         # self.model = self.load_model('model')
@@ -123,7 +145,7 @@ class clientProto(Client):
 
         test_acc = 0
         test_num = 0
-        
+
         if self.global_protos is not None:
             with torch.no_grad():
                 for x, y in testloaderfull:

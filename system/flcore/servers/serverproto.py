@@ -60,6 +60,7 @@ class FedProto(Server):
 
             self.receive_protos()
             self.global_protos = proto_aggregation(self.uploaded_protos)
+            self.global_protos_var = proto_aggregation(self.uploaded_protos_var)
             self.send_protos()
 
             self.Budget.append(time.time() - s_t)
@@ -79,11 +80,14 @@ class FedProto(Server):
 
     def send_protos(self):
         assert (len(self.clients) > 0)
-
+        client_num = 1
         for client in self.clients:
+            # print("client_num : ",client_num)
+            client_num += 1
             start_time = time.time()
 
             client.set_protos(self.global_protos)
+            client.set_protos_var(self.global_protos_var)
 
             client.send_time_cost['num_rounds'] += 1
             client.send_time_cost['total_cost'] += 2 * (time.time() - start_time)
@@ -93,9 +97,11 @@ class FedProto(Server):
 
         self.uploaded_ids = []
         self.uploaded_protos = []
+        self.uploaded_protos_var = []
         for client in self.selected_clients:
             self.uploaded_ids.append(client.id)
             self.uploaded_protos.append(client.protos)
+            self.uploaded_protos_var.append(client.protos_var)
 
     def evaluate(self, acc=None, loss=None):
         stats = self.test_metrics()

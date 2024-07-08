@@ -31,6 +31,7 @@ class clientProto(Client):
         self.protos = None
         self.protos_var = None
         self.global_protos = None
+        self.global_protos_var = None
         self.loss_mse = nn.MSELoss()
 
         self.lamda = args.lamda
@@ -89,8 +90,6 @@ class clientProto(Client):
 
                 for protos_key, protos_value in protos.items():
                     protos_var[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
-                    # protos_var[y_c].append(rep[i, :].detach().data.var())
-                    # print(protos_var[y_c])
 
                 # 反向传播和参数更新
                 self.optimizer.zero_grad()
@@ -112,8 +111,7 @@ class clientProto(Client):
         self.global_protos = global_protos
 
     def set_protos_var(self, global_protos_var):
-        # print("protos_var")
-        self.protos_var = global_protos_var
+        self.global_protos_var = global_protos_var
 
     def collect_protos(self):
         trainloader = self.load_train_data()

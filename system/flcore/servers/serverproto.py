@@ -38,6 +38,7 @@ class FedProto(Server):
         self.Budget = []
         self.num_classes = args.num_classes
         self.global_protos = [None for _ in range(args.num_classes)]
+        self.global_protos_var = [None for _ in range(args.num_classes)]
 
 
     def train(self):
@@ -80,10 +81,7 @@ class FedProto(Server):
 
     def send_protos(self):
         assert (len(self.clients) > 0)
-        client_num = 1
         for client in self.clients:
-            # print("client_num : ",client_num)
-            client_num += 1
             start_time = time.time()
 
             client.set_protos(self.global_protos)

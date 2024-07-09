@@ -39,6 +39,7 @@ class FedProto(Server):
         self.num_classes = args.num_classes
         self.global_protos = [None for _ in range(args.num_classes)]
         self.global_protos_var = [None for _ in range(args.num_classes)]
+        self.global_protos_skewness = [None for _ in range(args.num_classes)]
 
 
     def train(self):
@@ -62,6 +63,7 @@ class FedProto(Server):
             self.receive_protos()
             self.global_protos = proto_aggregation(self.uploaded_protos)
             self.global_protos_var = proto_aggregation(self.uploaded_protos_var)
+            self.global_protos_skewness = proto_aggregation(self.uploaded_protos_skewness)
             self.send_protos()
 
             self.Budget.append(time.time() - s_t)
@@ -86,6 +88,7 @@ class FedProto(Server):
 
             client.set_protos(self.global_protos)
             client.set_protos_var(self.global_protos_var)
+            client.set_protos_skewness(self.global_protos_skewness)
 
             client.send_time_cost['num_rounds'] += 1
             client.send_time_cost['total_cost'] += 2 * (time.time() - start_time)
@@ -96,10 +99,12 @@ class FedProto(Server):
         self.uploaded_ids = []
         self.uploaded_protos = []
         self.uploaded_protos_var = []
+        self.uploaded_protos_skewness = []
         for client in self.selected_clients:
             self.uploaded_ids.append(client.id)
             self.uploaded_protos.append(client.protos)
             self.uploaded_protos_var.append(client.protos_var)
+            self.uploaded_protos_skewness.append(client.protos_skewness)
 
     def evaluate(self, acc=None, loss=None):
         stats = self.test_metrics()

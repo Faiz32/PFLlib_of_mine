@@ -26,7 +26,6 @@ from collections import defaultdict
 def skewness(x):
     mean = torch.mean(x,dim=0)
     std = torch.std(x,dim=0)
-    # 防止除以零错误，如果标准差为零，则偏度没有意义
     return torch.mean((torch.div((x - mean),std)).pow(3),dim=0)
 
 
@@ -37,7 +36,9 @@ class clientProto(Client):
         self.protos = None
         self.protos_var = None
         self.global_protos = None
+        self.protos_skewness = None
         self.global_protos_var = None
+        self.global_protos_skewness = None
         self.loss_mse = nn.MSELoss()
 
         self.lamda = args.lamda
@@ -62,6 +63,7 @@ class clientProto(Client):
 
         protos = defaultdict(list)
         protos_var = defaultdict(list)
+        protos_skewness = defaultdict(list)
         for epoch in range(max_local_epochs):
             for i, (x, y) in enumerate(trainloader):
                 # 将数据移动到指定设备上
@@ -96,9 +98,7 @@ class clientProto(Client):
 
                 for protos_key, protos_value in protos.items():
                     protos_var[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
-
-                for protos_key, protos_value in protos.items():
-                    protos_var[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
+                    protos_skewness[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
 
                 # 反向传播和参数更新
                 self.optimizer.zero_grad()
@@ -108,6 +108,7 @@ class clientProto(Client):
         # 更新全局原型并应用学习率衰减
         self.protos = agg_func(protos)
         self.protos_var = agg_func(protos_var)
+        self.protos_skewness = agg_func(protos_skewness)
 
         if self.learning_rate_decay:
             self.learning_rate_scheduler.step()
@@ -121,6 +122,9 @@ class clientProto(Client):
 
     def set_protos_var(self, global_protos_var):
         self.global_protos_var = global_protos_var
+
+    def set_protos_skewness(self, global_protos_skewness):
+        self.global_protos_skewness = global_protos_skewness
 
     def collect_protos(self):
         trainloader = self.load_train_data()

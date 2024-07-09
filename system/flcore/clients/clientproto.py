@@ -23,6 +23,13 @@ import time
 from flcore.clients.clientbase import Client
 from collections import defaultdict
 
+def skewness(x):
+    mean = torch.mean(x,dim=0)
+    std = torch.std(x,dim=0)
+    # 防止除以零错误，如果标准差为零，则偏度没有意义
+    return torch.mean((torch.div((x - mean),std)).pow(3),dim=0)
+
+
 
 class clientProto(Client):
     def __init__(self, args, id, train_samples, test_samples, **kwargs):
@@ -87,6 +94,9 @@ class clientProto(Client):
                 for i, yy in enumerate(y):
                     y_c = yy.item()
                     protos[y_c].append(rep[i, :].detach().data)
+
+                for protos_key, protos_value in protos.items():
+                    protos_var[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
 
                 for protos_key, protos_value in protos.items():
                     protos_var[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))

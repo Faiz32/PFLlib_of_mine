@@ -30,7 +30,6 @@ def skewness(x):
     return torch.mean((torch.div((x - mean),std)).pow(3),dim=0)
 
 
-
 class clientProto(Client):
     def __init__(self, args, id, train_samples, test_samples, **kwargs):
         super().__init__(args, id, train_samples, test_samples, **kwargs)

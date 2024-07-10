@@ -37,18 +37,19 @@ def compute_variance(prototypes):
             variances[label] = torch.zeros_like(reps[0])
     return variances
 
+
 def compute_skewness(prototypes):
     """
     计算每个类别原型的方差。
     """
-    variances = {}
+    skewness_dict = {}
     for label, reps in prototypes.items():
         if len(reps) > 1:
-            stacked_reps = torch.stack(reps, dim=0)
-            variances[label] = torch.var(stacked_reps, dim=0)
+            skewness_dict[label] = skewness(reps)
         else:
-            variances[label] = torch.zeros_like(reps[0])
-    return variances
+            skewness_dict[label] = torch.zeros_like(reps[0])
+    return skewness_dict
+
 
 def skewness(prototypes):
     x = torch.stack(prototypes, dim=0)
@@ -71,6 +72,7 @@ class clientProto(Client):
 
         self.lamda = args.lamda
         self.beta = args.beta
+        self.gamma = 1.0
 
     def train(self):
         """
@@ -143,7 +145,7 @@ class clientProto(Client):
                         y_c = yy.item()
                         if self.global_protos_skewness[y_c] is not None:
                             proto_skewness_new = self.global_protos_skewness[y_c].data
-                            loss += self.loss_mse(rep_skewness[y_c], proto_skewness_new) * self.beta
+                            loss += self.loss_mse(rep_skewness[y_c], proto_skewness_new) * self.gamma
 
                 # 反向传播和参数更新
                 self.optimizer.zero_grad()

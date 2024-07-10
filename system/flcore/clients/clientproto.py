@@ -24,6 +24,30 @@ from flcore.clients.clientbase import Client
 from collections import defaultdict
 
 
+def get_var(x, y):
+    x_dict = defaultdict(list)
+    x_var_dict = defaultdict(list)
+    x_list = []
+    y2 = []
+    for i, yy in enumerate(y):
+        y_c = yy.item()
+        y2.append(y_c)
+        x_dict[y_c].append(x[i, :].detach().data)
+
+    for x_dict_key, x_dict_value in x_dict.items():
+        x_var_dict[x_dict_key].append(torch.var(torch.stack(x_dict_value, dim=0), dim=0))
+
+    y3 = sorted(set(y2), key=y2.index)
+
+    for i, yy in enumerate(y3):
+        # y_c = yy.item()
+        # print(type(x_var_dict[y_c][0]))
+        x_list.append(x_var_dict[yy][0])
+
+    x_var = torch.stack(x_list, dim=0)
+    return x_var
+
+
 class clientProto(Client):
     def __init__(self, args, id, train_samples, test_samples, **kwargs):
         super().__init__(args, id, train_samples, test_samples, **kwargs)
@@ -77,11 +101,17 @@ class clientProto(Client):
                 # 如果定义了全局原型，则在损失函数中加入对原型的更新
                 if self.global_protos is not None:
                     proto_new = copy.deepcopy(rep.detach())
+                    rep_var = get_var(proto_new, y)
+
                     for i, yy in enumerate(y):
                         y_c = yy.item()
                         if type(self.global_protos[y_c]) != type([]):
                             proto_new[i, :] = self.global_protos[y_c].data
-                    loss += self.loss_mse(proto_new, rep) * self.lamda
+
+                    proto_new_var = get_var(proto_new, y)
+
+                    loss += self.loss_mse(proto_new, rep) * self.lamda + self.loss_mse(proto_new_var,
+                                                                                       rep_var) * self.lamda
 
                 # 记录每个类别对应的特征表示
                 for i, yy in enumerate(y):
@@ -133,7 +163,6 @@ class clientProto(Client):
                     protos[y_c].append(rep[i, :].detach().data)
 
         self.protos = agg_func(protos)
-
 
     def test_metrics(self):
         testloaderfull = self.load_test_data()

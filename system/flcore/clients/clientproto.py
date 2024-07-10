@@ -23,10 +23,38 @@ import time
 from flcore.clients.clientbase import Client
 from collections import defaultdict
 
-def skewness(x):
-    mean = torch.mean(x,dim=0)
-    std = torch.std(x,dim=0)
-    return torch.mean((torch.div((x - mean),std)).pow(3),dim=0)
+
+def compute_variance(prototypes):
+    """
+    计算每个类别原型的方差。
+    """
+    variances = {}
+    for label, reps in prototypes.items():
+        if len(reps) > 1:
+            stacked_reps = torch.stack(reps, dim=0)
+            variances[label] = torch.var(stacked_reps, dim=0)
+        else:
+            variances[label] = torch.zeros_like(reps[0])
+    return variances
+
+def compute_skewness(prototypes):
+    """
+    计算每个类别原型的方差。
+    """
+    variances = {}
+    for label, reps in prototypes.items():
+        if len(reps) > 1:
+            stacked_reps = torch.stack(reps, dim=0)
+            variances[label] = torch.var(stacked_reps, dim=0)
+        else:
+            variances[label] = torch.zeros_like(reps[0])
+    return variances
+
+def skewness(prototypes):
+    x = torch.stack(prototypes, dim=0)
+    mean = torch.mean(x, dim=0)
+    std = torch.std(x, dim=0)
+    return torch.mean((torch.div((x - mean), std)).pow(3), dim=0)
 
 
 class clientProto(Client):
@@ -42,6 +70,7 @@ class clientProto(Client):
         self.loss_mse = nn.MSELoss()
 
         self.lamda = args.lamda
+        self.beta = args.beta
 
     def train(self):
         """
@@ -98,7 +127,23 @@ class clientProto(Client):
 
                 for protos_key, protos_value in protos.items():
                     protos_var[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
-                    protos_skewness[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
+                    protos_skewness[protos_key].append(skewness(protos_value))
+
+                if self.global_protos_var is not None:
+                    rep_var = compute_variance(protos)
+                    for i, yy in enumerate(y):
+                        y_c = yy.item()
+                        if self.global_protos_var[y_c] is not None:
+                            proto_var_new = self.global_protos_var[y_c].data
+                            loss += self.loss_mse(rep_var[y_c], proto_var_new) * self.beta
+
+                if self.global_protos_skewness is not None:
+                    rep_skewness = compute_skewness(protos)
+                    for i, yy in enumerate(y):
+                        y_c = yy.item()
+                        if self.global_protos_skewness[y_c] is not None:
+                            proto_skewness_new = self.global_protos_skewness[y_c].data
+                            loss += self.loss_mse(rep_skewness[y_c], proto_skewness_new) * self.beta
 
                 # 反向传播和参数更新
                 self.optimizer.zero_grad()
@@ -146,7 +191,6 @@ class clientProto(Client):
                     protos[y_c].append(rep[i, :].detach().data)
 
         self.protos = agg_func(protos)
-
 
     def test_metrics(self):
         testloaderfull = self.load_test_data()

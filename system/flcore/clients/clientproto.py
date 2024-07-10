@@ -169,7 +169,7 @@ class clientProto(Client):
 
     def set_protos_var(self, global_protos_var):
         self.global_protos_var = global_protos_var
-
+    """"""
     def set_protos_skewness(self, global_protos_skewness):
         self.global_protos_skewness = global_protos_skewness
 

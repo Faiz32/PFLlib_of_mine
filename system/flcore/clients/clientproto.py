@@ -48,6 +48,20 @@ def get_var(x, y):
     return x_var
 
 
+def compute_variance(prototypes):
+    """
+    计算每个类别原型的方差。
+    """
+    variances = {}
+    for label, reps in prototypes.items():
+        if len(reps) > 1:
+            stacked_reps = torch.stack(reps, dim=0)
+            variances[label] = torch.var(stacked_reps, dim=0)
+        else:
+            variances[label] = torch.zeros_like(reps[0])
+    return variances
+
+
 class clientProto(Client):
     def __init__(self, args, id, train_samples, test_samples, **kwargs):
         super().__init__(args, id, train_samples, test_samples, **kwargs)
@@ -59,7 +73,7 @@ class clientProto(Client):
         self.loss_mse = nn.MSELoss()
 
         self.lamda = args.lamda
-
+        self.beta = args.beta
     def train(self):
         """
         训练模型的过程。
@@ -99,6 +113,7 @@ class clientProto(Client):
                 loss = self.loss(output, y)
 
                 # 如果定义了全局原型，则在损失函数中加入对原型的更新
+                '''
                 if self.global_protos is not None:
                     proto_new = copy.deepcopy(rep.detach())
                     rep_var = get_var(proto_new, y)
@@ -113,6 +128,16 @@ class clientProto(Client):
                     loss += self.loss_mse(proto_new, rep) * self.lamda + self.loss_mse(proto_new_var,
                                                                                        rep_var) * self.lamda
 
+                '''
+                if self.global_protos is not None:
+                    proto_new = copy.deepcopy(rep.detach())
+                    for i, yy in enumerate(y):
+                        y_c = yy.item()
+                        if self.global_protos[y_c] is not None:
+                            proto_new[i, :] = self.global_protos[y_c].data
+
+                    loss += self.loss_mse(proto_new, rep) * self.lamda
+
                 # 记录每个类别对应的特征表示
                 for i, yy in enumerate(y):
                     y_c = yy.item()
@@ -120,6 +145,14 @@ class clientProto(Client):
 
                 for protos_key, protos_value in protos.items():
                     protos_var[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
+
+                if self.global_protos_var is not None:
+                    rep_var = compute_variance(protos)
+                    for i, yy in enumerate(y):
+                        y_c = yy.item()
+                        if self.global_protos_var[y_c] is not None:
+                            proto_var_new = self.global_protos_var[y_c].data
+                            loss += self.loss_mse(rep_var[y_c], proto_var_new) * self.beta
 
                 # 反向传播和参数更新
                 self.optimizer.zero_grad()

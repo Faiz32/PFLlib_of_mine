@@ -74,7 +74,7 @@ class clientProto(Client):
         self.beta = args.beta
         self.gamma = 1.0
 
-    def train(self):
+    def train(self,poison = False):
         """
         训练模型的过程。
         此函数不接受参数，也不返回值。

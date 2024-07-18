@@ -64,8 +64,8 @@ class clientProto(Client):
 
         self.protos = None
         self.protos_var = None
-        self.global_protos = None
         self.protos_skewness = None
+        self.global_protos = None
         self.global_protos_var = None
         self.global_protos_skewness = None
         self.loss_mse = nn.MSELoss()

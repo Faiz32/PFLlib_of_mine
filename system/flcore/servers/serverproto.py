@@ -17,6 +17,8 @@
 
 import time
 import numpy as np
+
+from KDE import protos_kde
 from flcore.clients.clientproto import clientProto
 from flcore.servers.serverbase import Server
 from threading import Thread
@@ -40,6 +42,7 @@ class FedProto(Server):
         self.global_protos = [None for _ in range(args.num_classes)]
         self.global_protos_var = [None for _ in range(args.num_classes)]
         self.global_protos_skewness = [None for _ in range(args.num_classes)]
+        self.if_KDE = args.KDE
 
     def train(self):
         for i in range(self.global_rounds + 1):
@@ -65,9 +68,14 @@ class FedProto(Server):
             # [t.join() for t in threads]
 
             self.receive_protos()
-            self.global_protos = proto_aggregation(self.uploaded_protos)
-            self.global_protos_var = proto_aggregation(self.uploaded_protos_var)
-            self.global_protos_skewness = proto_aggregation(self.uploaded_protos_skewness)
+            if self.if_KDE:
+                self.global_protos = proto_aggregation_KDE(self.uploaded_protos)
+                self.global_protos_var = proto_aggregation_KDE(self.uploaded_protos_var)
+                self.global_protos_skewness = proto_aggregation_KDE(self.uploaded_protos_skewness)
+            else:
+                self.global_protos = proto_aggregation(self.uploaded_protos)
+                self.global_protos_var = proto_aggregation(self.uploaded_protos_var)
+                self.global_protos_skewness = proto_aggregation(self.uploaded_protos_skewness)
             self.send_protos()
 
             self.Budget.append(time.time() - s_t)
@@ -156,6 +164,7 @@ def proto_aggregation_KDE(local_protos_list):
     for local_protos in local_protos_list:
         for label in local_protos.keys():
             agg_protos_label[label].append(local_protos[label])
+    agg_protos_label = protos_kde(agg_protos_label)
 
     for [label, proto_list] in agg_protos_label.items():
         if len(proto_list) > 1:

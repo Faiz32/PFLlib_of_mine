@@ -60,7 +60,8 @@ def read_client_data(dataset, idx, is_train=True):
         test_data = [(x, y) for x, y in zip(X_test, y_test)]
         return test_data
 
-def  label_flipping(tensor,a,b):
+
+def label_flipping(tensor, a, b):
     tensor_ = tensor.detach().numpy()
     for i in range(len(tensor_)):
         if tensor_[i] == a:
@@ -69,6 +70,7 @@ def  label_flipping(tensor,a,b):
             tensor_[i] = a
     tensor = torch.tensor(tensor_)
     return tensor
+
 
 def read_client_poison_data(dataset, idx, is_train=True):
     if "News" in dataset:
@@ -80,10 +82,10 @@ def read_client_poison_data(dataset, idx, is_train=True):
         train_data = read_data(dataset, idx, is_train)
         X_train = torch.Tensor(train_data['x']).type(torch.float32)
         y_train = torch.Tensor(train_data['y']).type(torch.int64)
-        print(y_train)
-        y_train = label_flipping(y_train,1,7)
-        print(y_train)
-        #print("poison")
+        # print(y_train)
+        y_train = label_flipping(y_train, 1, 7)
+        # print(y_train)
+        # print("poison")
 
         train_data = [(x, y) for x, y in zip(X_train, y_train)]
         return train_data

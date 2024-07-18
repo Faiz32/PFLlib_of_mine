@@ -53,10 +53,11 @@ class FedProto(Server):
 
             counter_client = 0
             for client in self.selected_clients:
-                if counter_client == 0:
-                    client.train(poison=True)
+                # print(counter_client)
+                if counter_client == 1:
+                    client.train(no_poison=False)
                 else:
-                    client.train(poison=False)
+                    client.train(no_poison=True)
                 counter_client += 1
             # threads = [Thread(target=client.train)
             #            for client in self.selected_clients]

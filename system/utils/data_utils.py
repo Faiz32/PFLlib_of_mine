@@ -61,6 +61,29 @@ def read_client_data(dataset, idx, is_train=True):
         return test_data
 
 
+def read_client_poison_data(dataset, idx, is_train=True):
+    if "News" in dataset:
+        return read_client_data_text(dataset, idx, is_train)
+    elif "Shakespeare" in dataset:
+        return read_client_data_Shakespeare(dataset, idx)
+
+    if is_train:
+        train_data = read_data(dataset, idx, is_train)
+        X_train = torch.Tensor(train_data['x']).type(torch.float32)
+        y_train = torch.Tensor(train_data['y']).type(torch.int64)
+        print(y_train)
+        #print("poison")
+
+        train_data = [(x, y) for x, y in zip(X_train, y_train)]
+        return train_data
+    else:
+        test_data = read_data(dataset, idx, is_train)
+        X_test = torch.Tensor(test_data['x']).type(torch.float32)
+        y_test = torch.Tensor(test_data['y']).type(torch.int64)
+        test_data = [(x, y) for x, y in zip(X_test, y_test)]
+        return test_data
+
+
 def read_client_data_text(dataset, idx, is_train=True):
     if is_train:
         train_data = read_data(dataset, idx, is_train)
@@ -100,4 +123,3 @@ def read_client_data_Shakespeare(dataset, idx, is_train=True):
         y_test = torch.Tensor(test_data['y']).type(torch.int64)
         test_data = [(x, y) for x, y in zip(X_test, y_test)]
         return test_data
-

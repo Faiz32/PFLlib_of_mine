@@ -74,14 +74,17 @@ class clientProto(Client):
         self.beta = args.beta
         self.gamma = 1.0
 
-    def train(self,poison = False):
+    def train(self, no_poison):
         """
         训练模型的过程。
         此函数不接受参数，也不返回值。
         """
 
         # 加载训练数据
-        trainloader = self.load_train_data()
+        if no_poison:
+            trainloader = self.load_train_data()
+        else:
+            trainloader = self.load_train_poison_data()
         start_time = time.time()
 
         # 将模型设置为训练模式

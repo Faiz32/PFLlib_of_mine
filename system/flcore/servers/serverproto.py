@@ -150,3 +150,20 @@ def proto_aggregation(local_protos_list):
             agg_protos_label[label] = proto_list[0].data
 
     return agg_protos_label
+
+def proto_aggregation_KDE(local_protos_list):
+    agg_protos_label = defaultdict(list)
+    for local_protos in local_protos_list:
+        for label in local_protos.keys():
+            agg_protos_label[label].append(local_protos[label])
+
+    for [label, proto_list] in agg_protos_label.items():
+        if len(proto_list) > 1:
+            proto = 0 * proto_list[0].data
+            for i in proto_list:
+                proto += i.data
+            agg_protos_label[label] = proto / len(proto_list)
+        else:
+            agg_protos_label[label] = proto_list[0].data
+
+    return agg_protos_label

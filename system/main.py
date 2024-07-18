@@ -487,7 +487,8 @@ if __name__ == "__main__":
     # FedAvgDBE
     parser.add_argument('-mo', "--momentum", type=float, default=0.1)
     parser.add_argument('-klw', "--kl_weight", type=float, default=0.0)
-
+    # FedProto
+    parser.add_argument('-KDE', "--KDE", type=bool, default=False)
 
     args = parser.parse_args()
 

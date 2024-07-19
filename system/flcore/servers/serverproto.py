@@ -43,6 +43,8 @@ class FedProto(Server):
         self.global_protos_var = [None for _ in range(args.num_classes)]
         self.global_protos_skewness = [None for _ in range(args.num_classes)]
 
+        # self.kde = args.kde
+
     def train(self):
         for i in range(self.global_rounds + 1):
             s_t = time.time()
@@ -66,14 +68,15 @@ class FedProto(Server):
             # [t.start() for t in threads]
             # [t.join() for t in threads]
 
-            if_KDE = False
-            # if_KDE = True
+            # if_KDE = False
+            if_KDE = True
             self.receive_protos()
-            if if_KDE:
+            if if_KDE == True:
+                print("KDE")
                 self.global_protos = proto_aggregation_KDE(self.uploaded_protos)
                 self.global_protos_var = proto_aggregation_KDE(self.uploaded_protos_var)
                 self.global_protos_skewness = proto_aggregation_KDE(self.uploaded_protos_skewness)
-            else:
+            elif if_KDE == False:
                 self.global_protos = proto_aggregation(self.uploaded_protos)
                 self.global_protos_var = proto_aggregation(self.uploaded_protos_var)
                 self.global_protos_skewness = proto_aggregation(self.uploaded_protos_skewness)
@@ -148,7 +151,7 @@ def proto_aggregation(local_protos_list):
     for local_protos in local_protos_list:
         for label in local_protos.keys():
             agg_protos_label[label].append(local_protos[label])
-
+    #print(agg_protos_label)
     for [label, proto_list] in agg_protos_label.items():
         if len(proto_list) > 1:
             proto = 0 * proto_list[0].data
@@ -159,6 +162,7 @@ def proto_aggregation(local_protos_list):
             agg_protos_label[label] = proto_list[0].data
 
     return agg_protos_label
+
 
 def proto_aggregation_KDE(local_protos_list):
     agg_protos_label = defaultdict(list)

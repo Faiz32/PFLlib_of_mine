@@ -82,10 +82,7 @@ def read_client_poison_data(dataset, idx, is_train=True):
         train_data = read_data(dataset, idx, is_train)
         X_train = torch.Tensor(train_data['x']).type(torch.float32)
         y_train = torch.Tensor(train_data['y']).type(torch.int64)
-        # print(y_train)
         y_train = label_flipping(y_train, 1, 7)
-        # print(y_train)
-        # print("poison")
 
         train_data = [(x, y) for x, y in zip(X_train, y_train)]
         return train_data

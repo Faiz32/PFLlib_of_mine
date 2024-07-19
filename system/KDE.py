@@ -67,7 +67,7 @@ def proto_kde_evaluate(kde_list, proto_list, protos_bool):
 def protos_kde(agg_protos_label):
     print(type(agg_protos_label))
     agg_protos_label_kde = defaultdict(list)
-    for label, proto_list_for_label in agg_protos_label:
+    for label, proto_list_for_label in agg_protos_label.items():
         print(proto_list_for_label)
         # 分别对不同标签下的原型进行聚合，当前选择KDE密度估计
         # 检查特定标签是否存在于聚合原型标签中，如果存在，则对该标签的原型进行处理和评估

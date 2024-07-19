@@ -66,7 +66,8 @@ class FedProto(Server):
             # [t.start() for t in threads]
             # [t.join() for t in threads]
 
-            if_KDE = False
+            # if_KDE = False
+            if_KDE = True
             self.receive_protos()
             if if_KDE:
                 self.global_protos = proto_aggregation_KDE(self.uploaded_protos)

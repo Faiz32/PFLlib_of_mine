@@ -42,7 +42,6 @@ class FedProto(Server):
         self.global_protos = [None for _ in range(args.num_classes)]
         self.global_protos_var = [None for _ in range(args.num_classes)]
         self.global_protos_skewness = [None for _ in range(args.num_classes)]
-        self.if_KDE = args.KDE
 
     def train(self):
         for i in range(self.global_rounds + 1):
@@ -67,8 +66,9 @@ class FedProto(Server):
             # [t.start() for t in threads]
             # [t.join() for t in threads]
 
+            if_KDE = False
             self.receive_protos()
-            if self.if_KDE:
+            if if_KDE:
                 self.global_protos = proto_aggregation_KDE(self.uploaded_protos)
                 self.global_protos_var = proto_aggregation_KDE(self.uploaded_protos_var)
                 self.global_protos_skewness = proto_aggregation_KDE(self.uploaded_protos_skewness)

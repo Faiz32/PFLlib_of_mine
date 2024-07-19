@@ -169,7 +169,7 @@ def proto_aggregation_KDE(local_protos_list):
     for local_protos in local_protos_list:
         for label in local_protos.keys():
             agg_protos_label[label].append(local_protos[label])
-    print(agg_protos_label)
+    # print(agg_protos_label)
     agg_protos_label = protos_kde(agg_protos_label)
 
     for [label, proto_list] in agg_protos_label.items():

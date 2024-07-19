@@ -10,14 +10,14 @@ def extract_protos_data(proto_list_for_label):
         proto_list_for_label_new = proto_list_for_label[j].clone().detach().cpu()
         proto_list_for_label_np = np.array(proto_list_for_label_new, dtype=np.float64)
         intensities.append(proto_list_for_label_np)
-    intensities_np = np.vstack(intensities)
+    intensities_np = check_data(np.vstack(intensities))
     return intensities_np
 
 
 # 检查数据中是否存在无穷大或NaN值
 def check_data(data):
     # data = np.where(data == np.inf, 0, data)
-    data = np.where(data == np.nan, 0, data)
+    data = np.where(np.isnan(data), 0, data)
     # print(data)
     has_inf = np.any(np.isinf(data))
     has_nan = np.any(np.isnan(data))
@@ -25,13 +25,13 @@ def check_data(data):
         raise ValueError("Data contains inf values.")
     if has_nan:
         raise ValueError("Data contains NaN values.")
-
+    return data
 
 def proto_kde(proto_list):
     # 将原型列表转置并转换为浮点数类型的numpy数组
     proto_list_T = np.array(proto_list.T, dtype=np.float64)
     # 检查数据的合法性
-    check_data(proto_list_T)
+    # check_data(proto_list_T)
     kde_list = []
     for i in range(len(proto_list_T)):
         # 深拷贝第一个元素，用于后续比较和可能的常数值添加
@@ -46,7 +46,10 @@ def proto_kde(proto_list):
     return kde_list
 
 
-def proto_kde_evaluate(kde_list, proto_list, protos_bool):
+def proto_kde_evaluate(proto_list_for_label):
+    protos_bool = [True] * len(proto_list_for_label)
+    proto_list = extract_protos_data(proto_list_for_label)
+    kde_list = proto_kde(proto_list)
     proto_list_evaluate = []
     for i in range(len(proto_list)):
         proto_kde_evaluate_value = []
@@ -70,18 +73,12 @@ def proto_kde_evaluate(kde_list, proto_list, protos_bool):
 
 
 def protos_kde(agg_protos_label):
-    # print(type(agg_protos_label))
     agg_protos_label_kde = defaultdict(list)
     for label, proto_list_for_label in agg_protos_label.items():
-        # print(proto_list_for_label)
         # 分别对不同标签下的原型进行聚合，当前选择KDE密度估计
         # 检查特定标签是否存在于聚合原型标签中，如果存在，则对该标签的原型进行处理和评估
-        # proto_list_for_label = agg_protos_label[label]
-        protos_bool = [True] * len(proto_list_for_label)
         # print(proto_list_for_label)
-        proto_list = extract_protos_data(proto_list_for_label)
-        kde_list = proto_kde(proto_list)
-        protos_bool = proto_kde_evaluate(kde_list, proto_list, protos_bool)
+        protos_bool = proto_kde_evaluate(proto_list_for_label)
         for j in range(len(protos_bool)):
             if protos_bool[j]:
                 if label in agg_protos_label_kde:

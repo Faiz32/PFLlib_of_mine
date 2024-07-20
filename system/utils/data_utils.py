@@ -62,7 +62,7 @@ def read_client_data(dataset, idx, is_train=True):
 
 
 def label_flipping(tensor, a, b):
-    print("label_flipping")
+    # print("label_flipping")
     tensor_ = tensor.detach().numpy()
     for i in range(len(tensor_)):
         if tensor_[i] == a:

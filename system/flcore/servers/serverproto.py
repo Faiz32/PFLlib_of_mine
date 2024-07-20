@@ -69,17 +69,12 @@ class FedProto(Server):
             # [t.join() for t in threads]
 
             # if_KDE = False
-            if_KDE = True
             self.receive_protos()
-            if if_KDE == True:
-                print("KDE")
-                self.global_protos = proto_aggregation_KDE(self.uploaded_protos)
-                self.global_protos_var = proto_aggregation_KDE(self.uploaded_protos_var)
-                self.global_protos_skewness = proto_aggregation_KDE(self.uploaded_protos_skewness)
-            elif if_KDE == False:
-                self.global_protos = proto_aggregation(self.uploaded_protos)
-                self.global_protos_var = proto_aggregation(self.uploaded_protos_var)
-                self.global_protos_skewness = proto_aggregation(self.uploaded_protos_skewness)
+            self.global_protos = proto_aggregation_KDE(self.uploaded_protos)
+            # self.global_protos = proto_aggregation(self.uploaded_protos)
+            self.global_protos_var = proto_aggregation(self.uploaded_protos_var)
+            self.global_protos_skewness = proto_aggregation(self.uploaded_protos_skewness)
+
             self.send_protos()
 
             self.Budget.append(time.time() - s_t)
@@ -165,6 +160,7 @@ def proto_aggregation(local_protos_list):
 
 
 def proto_aggregation_KDE(local_protos_list):
+    # print(local_protos_list)
     agg_protos_label = defaultdict(list)
     for local_protos in local_protos_list:
         for label in local_protos.keys():

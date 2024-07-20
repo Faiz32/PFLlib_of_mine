@@ -4,28 +4,39 @@ from scipy.stats import gaussian_kde
 from collections import defaultdict
 
 
+def if_has_nan(data):
+    has_nan = np.any(np.isnan(data))
+    return has_nan
+
+
+def if_has_real(data):
+    data = data[~np.isnan(data).any(axis=1)]
+    if len(data) == 0:
+        return False
+    else:
+        return True
+
+
+def check_data(data):
+    if if_has_nan(data) and if_has_real(data):
+        return 1  # 有nan也有实数
+    elif if_has_nan(data) and not if_has_real(data):
+        return 2  # 有nan无实数
+    elif not if_has_nan(data) and if_has_real(data):
+        return 3  # 无nan有实数
+    else:
+        return 4  # 无nan无实数
+
+
 def extract_protos_data(proto_list_for_label):
     intensities = []
     for j in range(len(proto_list_for_label)):
         proto_list_for_label_new = proto_list_for_label[j].clone().detach().cpu()
         proto_list_for_label_np = np.array(proto_list_for_label_new, dtype=np.float64)
         intensities.append(proto_list_for_label_np)
-    intensities_np = check_data(np.vstack(intensities))
+    intensities_np = np.vstack(intensities)
     return intensities_np
 
-
-# 检查数据中是否存在无穷大或NaN值
-def check_data(data):
-    # data = np.where(data == np.inf, 0, data)
-    data = np.where(np.isnan(data), 0, data)
-    # print(data)
-    has_inf = np.any(np.isinf(data))
-    has_nan = np.any(np.isnan(data))
-    if has_inf:
-        raise ValueError("Data contains inf values.")
-    if has_nan:
-        raise ValueError("Data contains NaN values.")
-    return data
 
 def proto_kde(proto_list):
     # 将原型列表转置并转换为浮点数类型的numpy数组
@@ -46,9 +57,7 @@ def proto_kde(proto_list):
     return kde_list
 
 
-def proto_kde_evaluate(proto_list_for_label):
-    protos_bool = [True] * len(proto_list_for_label)
-    proto_list = extract_protos_data(proto_list_for_label)
+def get_protos_bool(proto_list, protos_bool):
     kde_list = proto_kde(proto_list)
     proto_list_evaluate = []
     for i in range(len(proto_list)):
@@ -72,17 +81,34 @@ def proto_kde_evaluate(proto_list_for_label):
     return protos_bool
 
 
+def proto_kde_evaluate(proto_list_for_label):
+    protos_bool = [False] * len(proto_list_for_label)
+    proto_list = extract_protos_data(proto_list_for_label)
+    if check_data(proto_list) == 1:
+        # 有nan也有实数
+        proto_list = proto_list[~np.isnan(proto_list).any(axis=1)]
+        protos_bool = get_protos_bool(proto_list,protos_bool)
+    elif check_data(proto_list) == 2:
+        # 有nan无实数
+        for i in range(len(proto_list_for_label)):
+            if np.any(np.isinf(proto_list[i])):
+                protos_bool[i] = True
+    else:
+        # 无nan有实数
+        protos_bool = get_protos_bool(proto_list,protos_bool)
+    # if check_data(proto_list) == 4:#无nan无实数
+
+    # kde_list = proto_kde(proto_list)
+
+    return protos_bool
+
+
 def protos_kde(agg_protos_label):
     agg_protos_label_kde = defaultdict(list)
     for label, proto_list_for_label in agg_protos_label.items():
-        # 分别对不同标签下的原型进行聚合，当前选择KDE密度估计
-        # 检查特定标签是否存在于聚合原型标签中，如果存在，则对该标签的原型进行处理和评估
-        # print(proto_list_for_label)
         protos_bool = proto_kde_evaluate(proto_list_for_label)
         for j in range(len(protos_bool)):
             if protos_bool[j]:
-                if label in agg_protos_label_kde:
-                    agg_protos_label_kde[label].append(proto_list_for_label[j])
-                else:
-                    agg_protos_label_kde[label] = [proto_list_for_label[j]]
+                agg_protos_label_kde[label].append(proto_list_for_label[j])
+
     return agg_protos_label_kde

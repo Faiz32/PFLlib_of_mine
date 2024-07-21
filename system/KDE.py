@@ -3,6 +3,13 @@ import numpy as np
 from scipy.stats import gaussian_kde
 from collections import defaultdict
 
+class proto4client():
+    def __init__(self):
+        self.protos = defaultdict(list)
+        self.protos_var = defaultdict(list)
+        self.protos_skewness = defaultdict(list)
+        self.malicious = 0
+
 
 def if_has_nan(data):
     has_nan = np.any(np.isnan(data))

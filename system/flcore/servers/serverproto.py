@@ -18,7 +18,7 @@
 import time
 import numpy as np
 import torch
-from KDE import protos_kde
+from KDE import protos_kde, proto4client
 from flcore.clients.clientproto import clientProto
 from flcore.servers.serverbase import Server
 from threading import Thread
@@ -46,29 +46,27 @@ class FedProto(Server):
         # self.kde = args.kde
 
     def train(self):
-        protos_kde = defaultdict(list)
-        protos_var_kde = defaultdict(list)
-        protos_skewness_kde = defaultdict(list)
+        client_Proto_list = {}
         for i in range(self.global_rounds + 1):
             s_t = time.time()
             self.selected_clients = self.select_clients()
-
             if i % self.eval_gap == 0:
                 print(f"\n-------------Round number: {i}-------------")
                 print("\nEvaluate personalized models")
                 self.evaluate()
 
-            counter_client = 0
-            for client in self.selected_clients:
+            for j, client in enumerate(self.selected_clients):
                 """
                  # print(counter_client)
                 if counter_client == 1:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=False)
                 else:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
-                counter_client += 1
                 """
                 protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
+                client_Proto_list[j].protos = protos_np
+                client_Proto_list[j].protos_var = protos_var_np
+                client_Proto_list[j].protos_skewness = protos_skewness_np
             self.receive_protos()
 
             self.global_protos = proto_aggregation(self.uploaded_protos)

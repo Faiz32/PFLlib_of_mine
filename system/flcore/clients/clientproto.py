@@ -64,8 +64,8 @@ class clientProto(Client):
 
         self.protos = None
         self.protos_var = None
-        self.global_protos = None
         self.protos_skewness = None
+        self.global_protos = None
         self.global_protos_var = None
         self.global_protos_skewness = None
         self.loss_mse = nn.MSELoss()
@@ -159,11 +159,10 @@ class clientProto(Client):
         self.protos = agg_func(protos)
         self.protos_var = agg_func(protos_var)
         self.protos_skewness = agg_func(protos_skewness)
-        #print("protos:", self.protos)
+
         protos_np = turn_np(self.protos)
         protos_var_np = turn_np(self.protos_var)
         protos_skewness_np = turn_np(self.protos_skewness)
-        #print("protos_np:", protos_np)
 
         if self.learning_rate_decay:
             self.learning_rate_scheduler.step()

@@ -17,7 +17,7 @@
 
 import time
 import numpy as np
-
+import torch
 from KDE import protos_kde
 from flcore.clients.clientproto import clientProto
 from flcore.servers.serverbase import Server
@@ -60,19 +60,21 @@ class FedProto(Server):
 
             counter_client = 0
             for client in self.selected_clients:
-                # print(counter_client)
+                """
+                 # print(counter_client)
                 if counter_client == 1:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=False)
                 else:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
                 counter_client += 1
-
+                """
+                protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
             self.receive_protos()
 
             self.global_protos = proto_aggregation(self.uploaded_protos)
             self.global_protos_var = proto_var_aggregation(self.uploaded_protos_var)
-            self.global_protos_skewness = proto_aggregation(self.uploaded_protos_skewness)
-
+            self.global_protos_skewness = proto_var_aggregation(self.uploaded_protos_skewness)
+            # print(self.global_protos_skewness)
             self.send_protos()
 
             self.Budget.append(time.time() - s_t)
@@ -174,12 +176,20 @@ def proto_aggregation(local_protos_list):
 
     return agg_protos_label
 
+
 def proto_var_aggregation(local_protos_list):
     agg_protos_label = defaultdict(list)
     for local_protos in local_protos_list:
         for label in local_protos.keys():
+            local_protos[label] = torch.where(torch.isnan(local_protos[label]), torch.full_like(local_protos[label], 0),
+                                              local_protos[label])
             agg_protos_label[label].append(local_protos[label])
+    for [label, proto_list] in agg_protos_label.items():
+        agg_protos_label[label] = proto_list[0].data
+
     return agg_protos_label
+
+
 """
 def proto_aggregation_KDE(local_protos_list):
     # print(local_protos_list)
@@ -202,8 +212,8 @@ def proto_aggregation_KDE(local_protos_list):
     return agg_protos_label
 """
 
-def turn_np(protos):
 
+def turn_np(protos):
     protos_np = {}
     for [label, proto_list] in protos.items():
         protos_np[label] = proto_list.clone().detach().cpu().data.numpy()

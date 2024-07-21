@@ -46,6 +46,9 @@ class FedProto(Server):
         # self.kde = args.kde
 
     def train(self):
+        protos_kde = defaultdict(list)
+        protos_var_kde = defaultdict(list)
+        protos_skewness_kde = defaultdict(list)
         for i in range(self.global_rounds + 1):
             s_t = time.time()
             self.selected_clients = self.select_clients()
@@ -59,20 +62,15 @@ class FedProto(Server):
             for client in self.selected_clients:
                 # print(counter_client)
                 if counter_client == 1:
-                    client.train(no_poison=False)
+                    protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=False)
                 else:
-                    client.train(no_poison=True)
+                    protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
                 counter_client += 1
-            # threads = [Thread(target=client.train)
-            #            for client in self.selected_clients]
-            # [t.start() for t in threads]
-            # [t.join() for t in threads]
 
-            # if_KDE = False
             self.receive_protos()
-            self.global_protos = proto_aggregation_KDE(self.uploaded_protos)
-            # self.global_protos = proto_aggregation(self.uploaded_protos)
-            self.global_protos_var = proto_aggregation(self.uploaded_protos_var)
+
+            self.global_protos = proto_aggregation(self.uploaded_protos)
+            self.global_protos_var = proto_var_aggregation(self.uploaded_protos_var)
             self.global_protos_skewness = proto_aggregation(self.uploaded_protos_skewness)
 
             self.send_protos()
@@ -159,6 +157,30 @@ def proto_aggregation(local_protos_list):
     return agg_protos_label
 
 
+def proto_aggregation(local_protos_list):
+    agg_protos_label = defaultdict(list)
+    for local_protos in local_protos_list:
+        for label in local_protos.keys():
+            agg_protos_label[label].append(local_protos[label])
+    #print(agg_protos_label)
+    for [label, proto_list] in agg_protos_label.items():
+        if len(proto_list) > 1:
+            proto = 0 * proto_list[0].data
+            for i in proto_list:
+                proto += i.data
+            agg_protos_label[label] = proto / len(proto_list)
+        else:
+            agg_protos_label[label] = proto_list[0].data
+
+    return agg_protos_label
+
+def proto_var_aggregation(local_protos_list):
+    agg_protos_label = defaultdict(list)
+    for local_protos in local_protos_list:
+        for label in local_protos.keys():
+            agg_protos_label[label].append(local_protos[label])
+    return agg_protos_label
+"""
 def proto_aggregation_KDE(local_protos_list):
     # print(local_protos_list)
     agg_protos_label = defaultdict(list)
@@ -166,7 +188,7 @@ def proto_aggregation_KDE(local_protos_list):
         for label in local_protos.keys():
             agg_protos_label[label].append(local_protos[label])
     # print(agg_protos_label)
-    agg_protos_label = protos_kde(agg_protos_label)
+    #agg_protos_label = protos_kde(agg_protos_label)
 
     for [label, proto_list] in agg_protos_label.items():
         if len(proto_list) > 1:
@@ -178,3 +200,11 @@ def proto_aggregation_KDE(local_protos_list):
             agg_protos_label[label] = proto_list[0].data
 
     return agg_protos_label
+"""
+
+def turn_np(protos):
+
+    protos_np = {}
+    for [label, proto_list] in protos.items():
+        protos_np[label] = proto_list.clone().detach().cpu().data.numpy()
+    return protos_np

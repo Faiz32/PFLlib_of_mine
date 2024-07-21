@@ -73,7 +73,7 @@ class clientProto(Client):
         self.lamda = args.lamda
         self.beta = args.beta
         self.gamma = 1.0
-
+        self.malicious = 0
     def train(self, no_poison):
         """
         训练模型的过程。
@@ -159,6 +159,11 @@ class clientProto(Client):
         self.protos = agg_func(protos)
         self.protos_var = agg_func(protos_var)
         self.protos_skewness = agg_func(protos_skewness)
+        #print("protos:", self.protos)
+        protos_np = turn_np(self.protos)
+        protos_var_np = turn_np(self.protos_var)
+        protos_skewness_np = turn_np(self.protos_skewness)
+        #print("protos_np:", protos_np)
 
         if self.learning_rate_decay:
             self.learning_rate_scheduler.step()
@@ -166,7 +171,7 @@ class clientProto(Client):
         # 更新训练时间统计
         self.train_time_cost['num_rounds'] += 1
         self.train_time_cost['total_cost'] += time.time() - start_time
-
+        return protos_np, protos_var_np, protos_skewness_np
     def set_protos(self, global_protos):
         self.global_protos = global_protos
 
@@ -280,3 +285,10 @@ def agg_func(protos):
             protos[label] = proto_list[0]
 
     return protos
+
+
+def turn_np(protos):
+    protos_np = {}
+    for [label, proto_list] in protos.items():
+        protos_np[label] = proto_list.clone().detach().cpu().data.numpy()
+    return protos_np

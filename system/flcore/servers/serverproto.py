@@ -38,7 +38,7 @@ class FedProto(Server):
 
         # self.load_model()
         self.Budget = []
-        self.num_classes = args.num_classes1
+        self.num_classes = args.num_classes
         self.global_protos = [None for _ in range(args.num_classes)]
         self.global_protos_var = [None for _ in range(args.num_classes)]
         self.global_protos_skewness = [None for _ in range(args.num_classes)]

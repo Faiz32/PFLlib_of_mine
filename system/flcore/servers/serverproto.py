@@ -18,7 +18,7 @@
 import time
 import numpy as np
 import torch
-from KDE import protos_kde, proto4client
+from KDE import kde, put_proto, get_global_proto_kde, get_malicious
 from flcore.clients.clientproto import clientProto
 from flcore.servers.serverbase import Server
 from threading import Thread
@@ -55,18 +55,35 @@ class FedProto(Server):
                 print("\nEvaluate personalized models")
                 self.evaluate()
 
+            global_proto_np_list = {}
+            global_proto_var_np_list = {}
+            global_proto_skewness_np_list = {}
+            global_proto_kde = {}
+            global_proto_var_kde = {}
+            global_proto_skewness_kde = {}
+
             for j, client in enumerate(self.selected_clients):
-                """
-                 # print(counter_client)
-                if counter_client == 1:
+                # print(counter_client)
+                if j == 1:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=False)
                 else:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
-                """
-                protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
+                # protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
                 client_Proto_list[j].protos = protos_np
                 client_Proto_list[j].protos_var = protos_var_np
                 client_Proto_list[j].protos_skewness = protos_skewness_np
+                global_proto_np_list = put_proto(protos_np, global_proto_kde)
+                global_proto_var_np_list= put_proto(protos_var_np, global_proto_var_kde)
+                global_proto_skewness_np_list = put_proto(protos_skewness_np, global_proto_skewness_kde)
+
+            global_proto_kde = get_global_proto_kde(global_proto_np_list, global_proto_kde)
+            global_proto_var_kde = get_global_proto_kde(global_proto_var_np_list, global_proto_var_kde)
+            global_proto_skewness_kde = get_global_proto_kde(global_proto_skewness_np_list, global_proto_skewness_kde)
+            for j, client in enumerate(self.selected_clients):
+                malicious1 = get_malicious(client_Proto_list[j].protos,global_proto_kde)
+                malicious2 = get_malicious(client_Proto_list[j].protos_var,global_proto_var_kde)
+                malicious3 = get_malicious(client_Proto_list[j].protos_skewness,global_proto_skewness_kde)
+                client.malicious += malicious1 + malicious2 + malicious3
             self.receive_protos()
 
             self.global_protos = proto_aggregation(self.uploaded_protos)

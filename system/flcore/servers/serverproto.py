@@ -45,7 +45,7 @@ class FedProto(Server):
 
         # self.kde = args.kde
 
-    def train(self):1
+    def train(self):
         client_Proto_list = {}
         client_Proto_var_list = {}
         client_Proto_skewness_list = {}

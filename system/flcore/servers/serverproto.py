@@ -47,6 +47,8 @@ class FedProto(Server):
 
     def train(self):
         client_Proto_list = {}
+        client_Proto_var_list = {}
+        client_Proto_skewness_list = {}
         for i in range(self.global_rounds + 1):
             s_t = time.time()
             self.selected_clients = self.select_clients()
@@ -61,29 +63,40 @@ class FedProto(Server):
             global_proto_kde = {}
             global_proto_var_kde = {}
             global_proto_skewness_kde = {}
-
-            for j, client in enumerate(self.selected_clients):
-                # print(counter_client)
-                if j == 1:
+            if i == 0:
+                for j, client in enumerate(self.selected_clients):
+                    client.name = j
+            for client in self.selected_clients:
+                # print(j)
+                if client.name == 1:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=False)
                 else:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
                 # protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
-                client_Proto_list[j].protos = protos_np
-                client_Proto_list[j].protos_var = protos_var_np
-                client_Proto_list[j].protos_skewness = protos_skewness_np
+                client_Proto_list[client.name] = protos_np
+                client_Proto_var_list[client.name] = protos_var_np
+                client_Proto_skewness_list[client.name] = protos_skewness_np
                 global_proto_np_list = put_proto(protos_np, global_proto_kde)
-                global_proto_var_np_list= put_proto(protos_var_np, global_proto_var_kde)
-                global_proto_skewness_np_list = put_proto(protos_skewness_np, global_proto_skewness_kde)
+                # global_proto_var_np_list = put_proto(protos_var_np, global_proto_var_kde)
+                # global_proto_skewness_np_list = put_proto(protos_skewness_np, global_proto_skewness_kde)
 
             global_proto_kde = get_global_proto_kde(global_proto_np_list, global_proto_kde)
-            global_proto_var_kde = get_global_proto_kde(global_proto_var_np_list, global_proto_var_kde)
-            global_proto_skewness_kde = get_global_proto_kde(global_proto_skewness_np_list, global_proto_skewness_kde)
-            for j, client in enumerate(self.selected_clients):
-                malicious1 = get_malicious(client_Proto_list[j].protos,global_proto_kde)
-                malicious2 = get_malicious(client_Proto_list[j].protos_var,global_proto_var_kde)
-                malicious3 = get_malicious(client_Proto_list[j].protos_skewness,global_proto_skewness_kde)
-                client.malicious += malicious1 + malicious2 + malicious3
+            # global_proto_var_kde = get_global_proto_kde(global_proto_var_np_list, global_proto_var_kde)
+            # global_proto_skewness_kde = get_global_proto_kde(global_proto_skewness_np_list, global_proto_skewness_kde)
+            client_malicious_list = []
+            for client in self.selected_clients:
+                malicious1 = get_malicious(client_Proto_list[client.name], global_proto_kde)
+                # malicious2 = get_malicious(client_Proto_var_list[client.name],global_proto_var_kde)
+                # malicious3 = get_malicious(client_Proto_skewness_list[client.name],global_proto_skewness_kde)
+
+                # client.malicious += malicious1 + malicious2 + malicious3
+                # print("malicious for "+str(j)+":", malicious1)
+                client.malicious += (malicious1-1)
+                dict = {}
+                dict[client.name] = client.malicious
+                client_malicious_list.append(dict)
+                print("malicious for " + str(client.name) + ":", client.malicious)
+
             self.receive_protos()
 
             self.global_protos = proto_aggregation(self.uploaded_protos)

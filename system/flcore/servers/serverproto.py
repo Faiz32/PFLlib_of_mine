@@ -83,19 +83,17 @@ class FedProto(Server):
             global_proto_kde = get_global_proto_kde(global_proto_np_list, global_proto_kde)
             # global_proto_var_kde = get_global_proto_kde(global_proto_var_np_list, global_proto_var_kde)
             # global_proto_skewness_kde = get_global_proto_kde(global_proto_skewness_np_list, global_proto_skewness_kde)
-            client_malicious_list = []
             for client in self.selected_clients:
-                malicious1 = get_malicious(client_Proto_list[client.name], global_proto_kde)
+                malicious = get_malicious(client_Proto_list[client.name], global_proto_kde)
                 # malicious2 = get_malicious(client_Proto_var_list[client.name],global_proto_var_kde)
                 # malicious3 = get_malicious(client_Proto_skewness_list[client.name],global_proto_skewness_kde)
 
                 # client.malicious += malicious1 + malicious2 + malicious3
                 # print("malicious for "+str(j)+":", malicious1)
-                client.malicious += (malicious1-1)
-                dict = {}
-                dict[client.name] = client.malicious
-                client_malicious_list.append(dict)
-                print("malicious for " + str(client.name) + ":", client.malicious)
+                client.malicious = malicious-1
+                client.malicious_queue.append(client.malicious)
+                # print("malicious for " + str(client.name) + ":", client.malicious)
+                print("last 5 malicious for " + str(client.name) + ":", sum(client.malicious_queue))
 
             self.receive_protos()
 

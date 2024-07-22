@@ -24,6 +24,7 @@ from torch.utils.data import DataLoader
 from sklearn.preprocessing import label_binarize
 from sklearn import metrics
 from utils.data_utils import read_client_data, read_client_poison_data
+from collections import deque
 
 
 class Client(object):
@@ -47,7 +48,9 @@ class Client(object):
         self.learning_rate = args.local_learning_rate
         self.local_epochs = args.local_epochs
         self.malicious = 0
+        self.malicious_queue = deque([0, 0, 0, 0, 0],maxlen=5)
         self.name = 0
+
         # check BatchNorm
         self.has_BatchNorm = False
         for layer in self.model.children():

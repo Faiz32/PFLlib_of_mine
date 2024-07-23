@@ -67,6 +67,7 @@ class FedProto(Server):
             if i == 0:
                 for j, client in enumerate(self.selected_clients):
                     client.id = j
+
             for client in self.selected_clients:
                 # print(j)
                 if client.id == 1:
@@ -83,16 +84,13 @@ class FedProto(Server):
             global_proto_kde = get_global_proto_kde(global_proto_np_list, global_proto_kde)
             # global_proto_var_kde = get_global_proto_kde(global_proto_var_np_list, global_proto_var_kde)
             # global_proto_skewness_kde = get_global_proto_kde(global_proto_skewness_np_list, global_proto_skewness_kde)
-            self.max_malicious = -10  #重置恶意值
             for client in self.selected_clients:
                 malicious_this_round = get_malicious(client_Proto_list[client.id], global_proto_kde)
                 # client.malicious = malicious_this_round
                 client.malicious_queue.append(malicious_this_round)
                 client.sum_malicious = sum(client.malicious_queue)
                 print("last 5 malicious for " + str(client.id) + ":", client.sum_malicious)
-                if client.sum_malicious > self.max_malicious:
-                    self.max_malicious = client.sum_malicious
-            print("max malicious:", self.max_malicious)
+            #print("max malicious:", self.max_malicious)
             self.receive_protos(round=i)
 
             self.global_protos = proto_aggregation(self.uploaded_protos)
@@ -134,9 +132,13 @@ class FedProto(Server):
         self.uploaded_protos = []
         self.uploaded_protos_var = []
         self.uploaded_protos_skewness = []
+        malicious_list = []
+        for client in self.selected_clients:
+            malicious_list.append(client.sum_malicious)
+        malicious_list = sorted(malicious_list, reverse=True)
         for client in self.selected_clients:
             self.uploaded_ids.append(client.id)
-            key = self.max_malicious - 0.5
+            key = malicious_list[2] - 0.1
             # key = 1000  # 不防御
             if client.sum_malicious > key and round > 5:
                 if client.history_Credibility > 3:

@@ -50,6 +50,7 @@ class Client(object):
         self.sum_malicious = 0
         self.malicious_queue = deque([0, 0, 0, 0, 0],maxlen=5)
         self.update = True
+        self.history_Credibility = 0
 
         # check BatchNorm
         self.has_BatchNorm = False

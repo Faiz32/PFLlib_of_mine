@@ -139,11 +139,20 @@ class FedProto(Server):
             key = self.max_malicious - 0.5
             # key = 1000  # 不防御
             if client.sum_malicious > key and round > 5:
-                print("client " + str(client.id) + " is malicious, skip")
+                if client.history_Credibility > 3:
+                    print("client " + str(client.id) + " is malicious, skip")
+                else:
+                    print("client " + str(client.id) + " is malicious, but not skip")
+                    self.uploaded_protos.append(client.protos)
+                    self.uploaded_protos_var.append(client.protos_var)
+                    self.uploaded_protos_skewness.append(client.protos_skewness)
+                client.history_Credibility += 1
             else:
                 self.uploaded_protos.append(client.protos)
                 self.uploaded_protos_var.append(client.protos_var)
                 self.uploaded_protos_skewness.append(client.protos_skewness)
+                if client.history_Credibility > 0:
+                    client.history_Credibility -= 1
 
     def evaluate(self, acc=None, loss=None):
         stats = self.test_metrics()

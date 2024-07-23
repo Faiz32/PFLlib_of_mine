@@ -95,7 +95,7 @@ class FedProto(Server):
                 # print("malicious for " + str(client.name) + ":", client.malicious)
                 print("last 5 malicious for " + str(client.name) + ":", sum(client.malicious_queue))
 
-            self.receive_protos()1
+            self.receive_protos()
 
             self.global_protos = proto_aggregation(self.uploaded_protos)
             self.global_protos_var = proto_var_aggregation(self.uploaded_protos_var)

@@ -73,7 +73,6 @@ class clientProto(Client):
         self.lamda = args.lamda
         self.beta = args.beta
         self.gamma = 1.0
-        self.malicious = 0
     def train(self, no_poison):
         """
         训练模型的过程。

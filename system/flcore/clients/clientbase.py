@@ -47,9 +47,9 @@ class Client(object):
         self.batch_size = args.batch_size
         self.learning_rate = args.local_learning_rate
         self.local_epochs = args.local_epochs
-        self.malicious = 0
+        self.sum_malicious = 0
         self.malicious_queue = deque([0, 0, 0, 0, 0],maxlen=5)
-        self.name = 0
+        self.update = True
 
         # check BatchNorm
         self.has_BatchNorm = False

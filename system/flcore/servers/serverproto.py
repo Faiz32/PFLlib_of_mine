@@ -90,7 +90,7 @@ class FedProto(Server):
 
                 # client.malicious += malicious1 + malicious2 + malicious3
                 # print("malicious for "+str(j)+":", malicious1)
-                client.malicious = malicious-1
+                client.malicious = malicious
                 client.malicious_queue.append(client.malicious)
                 # print("malicious for " + str(client.name) + ":", client.malicious)
                 print("last 5 malicious for " + str(client.name) + ":", sum(client.malicious_queue))

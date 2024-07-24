@@ -42,11 +42,13 @@ def get_global_proto_kde(global_proto_np_list, global_proto_kde):
 
 
 def get_malicious(client_Proto, global_proto_kde):
-    evaluate_value_list = []
+    malicious_list = []
     for label, value in client_Proto.items():
         for i in range(len(global_proto_kde[label])):
-            evaluate_value_list.append(global_proto_kde[label][i].evaluate(value[i]))
-    evaluate_value = np.mean(evaluate_value_list)
+            evaluate_value = global_proto_kde[label][i].evaluate(value[i])
+            malicious = 1 / (0.1 + evaluate_value)
+            malicious_list.append(malicious)
+    malicious_mean = np.mean(malicious_list)
     """
         # print(evaluate_value)
     if evaluate_value > 0.5:
@@ -55,4 +57,4 @@ def get_malicious(client_Proto, global_proto_kde):
         return 0
     """
 
-    return evaluate_value
+    return malicious_mean

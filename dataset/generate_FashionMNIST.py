@@ -31,6 +31,15 @@ num_clients = 20
 dir_path = "FashionMNIST/"
 
 
+def delete_files(folder_path):
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+            #print(f"成功删除文件: {file_path}"
+    os.removedirs(folder_path)
+
+
 # Allocate data to users
 def generate_dataset(dir_path, num_clients, niid, balance, partition):
     if not os.path.exists(dir_path):
@@ -40,6 +49,9 @@ def generate_dataset(dir_path, num_clients, niid, balance, partition):
     config_path = dir_path + "config.json"
     train_path = dir_path + "train/"
     test_path = dir_path + "test/"
+    os.remove(config_path)
+    delete_files(train_path)
+    delete_files(test_path)
 
     if check(config_path, train_path, test_path, num_clients, niid, balance, partition):
         return

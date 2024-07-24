@@ -122,7 +122,8 @@ class clientProto(Client):
                         y_c = yy.item()
                         if type(self.global_protos[y_c]) != type([]):
                             proto_new[i, :] = self.global_protos[y_c].data
-                    loss += self.loss_mse(proto_new, rep) * self.lamda
+                    lose_mse = self.loss_mse(proto_new, rep)
+                    loss += lose_mse * self.lamda
 
                 # 记录每个类别对应的特征表示
                 for i, yy in enumerate(y):

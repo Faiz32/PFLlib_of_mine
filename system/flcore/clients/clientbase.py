@@ -51,7 +51,6 @@ class Client(object):
         self.malicious_queue = deque([0, 0, 0, 0, 0],maxlen=5)
         self.update = True
         self.history_Credibility = 0
-
         # check BatchNorm
         self.has_BatchNorm = False
         for layer in self.model.children():

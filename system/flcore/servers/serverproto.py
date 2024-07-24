@@ -18,7 +18,7 @@
 import time
 import numpy as np
 import torch
-from KDE import kde, put_proto, get_global_proto_kde, get_malicious
+from KDE import put_proto, get_global_proto_kde, get_malicious
 from flcore.clients.clientproto import clientProto
 from flcore.servers.serverbase import Server
 from threading import Thread
@@ -43,7 +43,7 @@ class FedProto(Server):
         self.global_protos_var = [None for _ in range(args.num_classes)]
         self.global_protos_skewness = [None for _ in range(args.num_classes)]
         self.max_malicious = 0
-        # self.kde = args.kde
+        self.kde = args.kde
 
     def train(self):
         client_Proto_list = {}
@@ -138,8 +138,10 @@ class FedProto(Server):
         malicious_list = sorted(malicious_list, reverse=True)
         for client in self.selected_clients:
             self.uploaded_ids.append(client.id)
-            key = malicious_list[2] - 0.1
-            # key = 1000  # 不防御
+            if self.kde:
+                key = malicious_list[2] - 0.1
+            else:
+                key = 1000  # 不防御
             if client.sum_malicious > key and round > 5:
                 if client.history_Credibility > 3:
                     print("client " + str(client.id) + " is malicious, skip")

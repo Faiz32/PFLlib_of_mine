@@ -488,7 +488,7 @@ if __name__ == "__main__":
     parser.add_argument('-mo', "--momentum", type=float, default=0.1)
     parser.add_argument('-klw', "--kl_weight", type=float, default=0.0)
     # FedProto
-    parser.add_argument('-kde', "--KDE", type=bool, default=False)
+    parser.add_argument('-kde', "--kde", type=bool, default=False)
 
     args = parser.parse_args()
 

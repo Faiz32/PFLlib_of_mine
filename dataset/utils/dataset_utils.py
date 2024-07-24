@@ -87,6 +87,7 @@ def separate_data(data, num_clients, num_classes, niid=False, balance=False, par
                 num_samples = [int(num_per) for _ in range(num_selected_clients-1)]
             else:
                 num_samples = np.random.randint(max(num_per/10, least_samples/num_classes), num_per, num_selected_clients-1).tolist()
+                print(num_samples)
             num_samples.append(num_all_samples-sum(num_samples))
 
             idx = 0

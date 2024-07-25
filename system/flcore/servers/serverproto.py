@@ -79,40 +79,7 @@ class FedProto(Server):
                 client_Proto_var_list[client.id] = protos_var_np
                 client_Proto_skewness_list[client.id] = protos_skewness_np
                 global_proto_np_list = put_proto(protos_np, global_proto_kde)
-                if i == 0:
-                    for label in client_Proto_list[client.id]:
-                        client.new_protos_for_labels[label]=protos_np[label]
-                # global_proto_var_np_list = put_proto(protos_var_np, global_proto_var_kde)
-                # global_proto_skewness_np_list = put_proto(protos_skewness_np, global_proto_skewness_kde)
-                differ = {}
-                for label in protos_np:
-                    client.old_protos_for_labels[label] = client.new_protos_for_labels[label]
-                    client.new_protos_for_labels[label] = protos_np[label]
-                for label in client.new_protos_for_labels:
-                    if label not in client.old_protos_for_labels:
-                        differ[label] = 0
-                    else:
-                        x = client.new_protos_for_labels[label]-client.old_protos_for_labels[label]
-                        differ[label] = np.inner(x, x)
-                client.differ = differ
-                differ_list =[]
-                for label,value in client.differ.items():
-                    if value != 0:
-                        differ_list.append(value)
-                client.differ_mean = np.mean(differ_list)
-                # print("differ for " + str(client.id) + ":", differ_mean)
 
-                """
-                client.protos_queues.append(protos_np)
-                if i >= 2:
-                    differ = []
-                    for label_old, label_new in client.protos_queues[0], client.protos_queues[1]:
-                        if label_old == label_new:
-                            x = client.Proto_queues[1](label_old) - client.Proto_queues[0](label_old)
-                            differ.append(np.inner(x, x))
-                    client.protos_differ = np.mean(differ)
-                    print("differ for " + str(client.id) + ":", client.protos_differ)
-                """
             global_proto_kde = get_global_proto_kde(global_proto_np_list, global_proto_kde)
             # global_proto_var_kde = get_global_proto_kde(global_proto_var_np_list, global_proto_var_kde)
             # global_proto_skewness_kde = get_global_proto_kde(global_proto_skewness_np_list, global_proto_skewness_kde)
@@ -121,9 +88,10 @@ class FedProto(Server):
                 # client.malicious = malicious_this_round
                 client.malicious_queue.append(malicious_this_round)
                 client.sum_malicious = sum(client.malicious_queue)
-                print("last 5 malicious for " + str(client.id) + ":", client.sum_malicious)
-                print("differ for " + str(client.id) + ":", client.differ_mean)
-                print(str(client.id),client.sum_malicious,client.differ_mean,client.sum_malicious*client.differ_mean)
+                # print("last 5 malicious for " + str(client.id) + ":", client.sum_malicious)
+                # print("differ for " + str(client.id) + ":", client.differ_mean)
+                # print(str(client.id), client.sum_malicious, client.differ_mean,client.sum_malicious * client.differ_mean)
+                print("%-4s: %18s" % (str(client.id), str(client.sum_malicious)))
                 # print("differ for " + str(client.id) + ":", client.protos_differ)
             # print("max malicious:", self.max_malicious)
             self.receive_protos(round=i)
@@ -174,17 +142,22 @@ class FedProto(Server):
         for client in self.selected_clients:
             self.uploaded_ids.append(client.id)
             if self.kde:
-                key_max = malicious_list[1] - 0.01
-                key_min = malicious_list[-1] + 0.01
-                if (client.sum_malicious > key_max or client.sum_malicious < key_min) and round > 25:
-                    if client.history_Credibility > 3:
-                        print("client " + str(client.id) + " is malicious, skip")
-                    else:
-                        print("client " + str(client.id) + " is malicious, but not skip")
-                        self.uploaded_protos.append(client.protos)
-                        self.uploaded_protos_var.append(client.protos_var)
-                        self.uploaded_protos_skewness.append(client.protos_skewness)
-                    client.history_Credibility += 1
+                key_max = malicious_list[0] - 0.0001
+                key_min = malicious_list[-1] + 0.0001
+                if client.sum_malicious < key_min and round > 5:
+                    # if client.history_Credibility > 3:
+                    print("client " + str(client.id) + " is malicious, skip")
+                    self.uploaded_protos.append(client.protos)
+                    self.uploaded_protos_var.append(client.protos_var)
+                    self.uploaded_protos_skewness.append(client.protos_skewness)
+                    # client.history_Credibility += 1
+                elif client.sum_malicious > key_max and round > 5:
+                    # if client.history_Credibility > 3:
+                    print("client " + str(client.id) + " is malicious, skip")
+                    self.uploaded_protos.append(client.protos)
+                    self.uploaded_protos_var.append(client.protos_var)
+                    self.uploaded_protos_skewness.append(client.protos_skewness)
+                    # client.history_Credibility += 1
                 else:
                     self.uploaded_protos.append(client.protos)
                     self.uploaded_protos_var.append(client.protos_var)
@@ -299,3 +272,9 @@ def turn_np(protos):
     for [label, proto_list] in protos.items():
         protos_np[label] = proto_list.clone().detach().cpu().data.numpy()
     return protos_np
+
+
+def get_cos_similar(v1, v2):
+    num = float(np.dot(v1, v2))  # 向量点乘
+    denom = np.linalg.norm(v1) * np.linalg.norm(v2)  # 求模长的乘积
+    return 0.5 + 0.5 * (num / denom) if denom != 0 else 0

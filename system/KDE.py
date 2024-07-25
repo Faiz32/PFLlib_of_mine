@@ -59,4 +59,4 @@ def get_malicious(client_Proto, global_proto_kde):
         return 0
     """
 
-    return math.log(malicious_mean)+5.0
+    return math.log(malicious_mean)

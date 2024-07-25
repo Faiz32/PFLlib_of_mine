@@ -48,7 +48,8 @@ def generate_dataset(dir_path, num_clients, niid, balance, partition, class_per_
     config_path = dir_path + "config.json"
     train_path = dir_path + "train/"
     test_path = dir_path + "test/"
-    #os.remove(config_path)
+    if os.path.exists(config_path):
+        os.remove(config_path)
     delete_files(train_path)
     delete_files(test_path)
 

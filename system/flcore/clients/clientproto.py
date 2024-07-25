@@ -73,6 +73,7 @@ class clientProto(Client):
         self.lamda = args.lamda
         self.beta = args.beta
         self.gamma = 1.0
+
     def train(self, no_poison):
         """
         训练模型的过程。
@@ -97,6 +98,7 @@ class clientProto(Client):
         protos = defaultdict(list)
         protos_var = defaultdict(list)
         protos_skewness = defaultdict(list)
+        lose_mse_sum = 0
         for epoch in range(max_local_epochs):
             for i, (x, y) in enumerate(trainloader):
                 # 将数据移动到指定设备上
@@ -124,7 +126,7 @@ class clientProto(Client):
                             proto_new[i, :] = self.global_protos[y_c].data
                     lose_mse = self.loss_mse(proto_new, rep)
                     loss += lose_mse * self.lamda
-
+                # print(self.id, "loss: ", loss)
                 # 记录每个类别对应的特征表示
                 for i, yy in enumerate(y):
                     y_c = yy.item()
@@ -140,7 +142,7 @@ class clientProto(Client):
                         y_c = yy.item()
                         if self.global_protos_var[y_c] is not None:
                             proto_var_new = self.global_protos_var[y_c].data
-                            loss += self.loss_mse(rep_var[y_c], proto_var_new) * self.beta
+                            #loss += self.loss_mse(rep_var[y_c], proto_var_new) * self.beta
 
                 if self.global_protos_skewness is not None:
                     rep_skewness = compute_skewness(protos)
@@ -148,7 +150,7 @@ class clientProto(Client):
                         y_c = yy.item()
                         if self.global_protos_skewness[y_c] is not None:
                             proto_skewness_new = self.global_protos_skewness[y_c].data
-                            loss += self.loss_mse(rep_skewness[y_c], proto_skewness_new) * self.gamma
+                            #loss += self.loss_mse(rep_skewness[y_c], proto_skewness_new) * self.gamma
 
                 # 反向传播和参数更新
                 self.optimizer.zero_grad()
@@ -170,7 +172,9 @@ class clientProto(Client):
         # 更新训练时间统计
         self.train_time_cost['num_rounds'] += 1
         self.train_time_cost['total_cost'] += time.time() - start_time
+
         return protos_np, protos_var_np, protos_skewness_np
+
     def set_protos(self, global_protos):
         self.global_protos = global_protos
 

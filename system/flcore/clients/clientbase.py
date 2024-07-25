@@ -49,6 +49,12 @@ class Client(object):
         self.local_epochs = args.local_epochs
         self.sum_malicious = 0
         self.malicious_queue = deque([0, 0, 0, 0, 0], maxlen=3)
+        self.old_protos_for_labels = {}
+        self.new_protos_for_labels = {}
+        self.differ = {}
+        self.differ_mean=0
+
+
         self.update = True
         self.history_Credibility = 0
         # check BatchNorm

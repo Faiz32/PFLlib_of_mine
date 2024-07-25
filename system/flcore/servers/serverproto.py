@@ -22,7 +22,7 @@ from KDE import put_proto, get_global_proto_kde, get_malicious
 from flcore.clients.clientproto import clientProto
 from flcore.servers.serverbase import Server
 from threading import Thread
-from collections import defaultdict
+from collections import defaultdict, deque
 
 
 class FedProto(Server):
@@ -49,6 +49,7 @@ class FedProto(Server):
         client_Proto_list = {}
         client_Proto_var_list = {}
         client_Proto_skewness_list = {}
+        #client_Proto_queues = deque({}, maxlen=2)
         self.max_malicious = 0
         for i in range(self.global_rounds + 1):
             s_t = time.time()
@@ -78,9 +79,40 @@ class FedProto(Server):
                 client_Proto_var_list[client.id] = protos_var_np
                 client_Proto_skewness_list[client.id] = protos_skewness_np
                 global_proto_np_list = put_proto(protos_np, global_proto_kde)
+                if i == 0:
+                    for label in client_Proto_list[client.id]:
+                        client.new_protos_for_labels[label]=protos_np[label]
                 # global_proto_var_np_list = put_proto(protos_var_np, global_proto_var_kde)
                 # global_proto_skewness_np_list = put_proto(protos_skewness_np, global_proto_skewness_kde)
+                differ = {}
+                for label in protos_np:
+                    client.old_protos_for_labels[label] = client.new_protos_for_labels[label]
+                    client.new_protos_for_labels[label] = protos_np[label]
+                for label in client.new_protos_for_labels:
+                    if label not in client.old_protos_for_labels:
+                        differ[label] = 0
+                    else:
+                        x = client.new_protos_for_labels[label]-client.old_protos_for_labels[label]
+                        differ[label] = np.inner(x, x)
+                client.differ = differ
+                differ_list =[]
+                for label,value in client.differ.items():
+                    if value != 0:
+                        differ_list.append(value)
+                client.differ_mean = np.mean(differ_list)
+                # print("differ for " + str(client.id) + ":", differ_mean)
 
+                """
+                client.protos_queues.append(protos_np)
+                if i >= 2:
+                    differ = []
+                    for label_old, label_new in client.protos_queues[0], client.protos_queues[1]:
+                        if label_old == label_new:
+                            x = client.Proto_queues[1](label_old) - client.Proto_queues[0](label_old)
+                            differ.append(np.inner(x, x))
+                    client.protos_differ = np.mean(differ)
+                    print("differ for " + str(client.id) + ":", client.protos_differ)
+                """
             global_proto_kde = get_global_proto_kde(global_proto_np_list, global_proto_kde)
             # global_proto_var_kde = get_global_proto_kde(global_proto_var_np_list, global_proto_var_kde)
             # global_proto_skewness_kde = get_global_proto_kde(global_proto_skewness_np_list, global_proto_skewness_kde)
@@ -90,7 +122,10 @@ class FedProto(Server):
                 client.malicious_queue.append(malicious_this_round)
                 client.sum_malicious = sum(client.malicious_queue)
                 print("last 5 malicious for " + str(client.id) + ":", client.sum_malicious)
-            #print("max malicious:", self.max_malicious)
+                print("differ for " + str(client.id) + ":", client.differ_mean)
+                print(str(client.id),client.sum_malicious,client.differ_mean,client.sum_malicious*client.differ_mean)
+                # print("differ for " + str(client.id) + ":", client.protos_differ)
+            # print("max malicious:", self.max_malicious)
             self.receive_protos(round=i)
 
             self.global_protos = proto_aggregation(self.uploaded_protos)
@@ -161,7 +196,6 @@ class FedProto(Server):
                 self.uploaded_protos.append(client.protos)
                 self.uploaded_protos_var.append(client.protos_var)
                 self.uploaded_protos_skewness.append(client.protos_skewness)
-
 
     def evaluate(self, acc=None, loss=None):
         stats = self.test_metrics()

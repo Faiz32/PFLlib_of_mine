@@ -1,4 +1,6 @@
 import copy
+import math
+
 import numpy as np
 from scipy.stats import gaussian_kde
 from collections import defaultdict
@@ -57,4 +59,4 @@ def get_malicious(client_Proto, global_proto_kde):
         return 0
     """
 
-    return malicious_mean
+    return math.log(malicious_mean)

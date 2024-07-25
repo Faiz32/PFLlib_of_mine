@@ -139,8 +139,9 @@ class FedProto(Server):
         for client in self.selected_clients:
             self.uploaded_ids.append(client.id)
             if self.kde:
-                key = malicious_list[2] - 0.10
-                if client.sum_malicious > key and round > 25:
+                key_max = malicious_list[1] - 0.01
+                key_min = malicious_list[-1] + 0.01
+                if (client.sum_malicious > key_max or client.sum_malicious < key_min) and round > 25:
                     if client.history_Credibility > 3:
                         print("client " + str(client.id) + " is malicious, skip")
                     else:

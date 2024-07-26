@@ -48,9 +48,10 @@ def generate_dataset(dir_path, num_clients, niid, balance, partition):
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
 
     trainset = torchvision.datasets.EMNIST(
-        root=dir_path+"rawdata", split='digits', train=True, download=True, transform=transform)
+        root=dir_path+"rawdata", split='digits', train=True, download=False, transform=transform)
     testset = torchvision.datasets.EMNIST(
-        root=dir_path+"rawdata", split='digits', train=False, download=True, transform=transform)
+        root=dir_path+"rawdata", split='digits', train=False, download=False, transform=transform)
+
     trainloader = torch.utils.data.DataLoader(
         trainset, batch_size=len(trainset.data), shuffle=False)
     testloader = torch.utils.data.DataLoader(

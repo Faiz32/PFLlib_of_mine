@@ -129,7 +129,7 @@ class FedProto(Server):
             client.send_time_cost['total_cost'] += 2 * (time.time() - start_time)
 
     def receive_protos(self, round):
-        assert (len(self.selected_clients) > 0)
+        assert (len(self.selected_clients) > 0)1
 
         self.uploaded_ids = []
         self.uploaded_protos = []

@@ -71,7 +71,7 @@ class FedProto(Server):
 
             for client in self.selected_clients:
                 # print(j)
-                if client.id == 1:
+                if client.id == 1 or client.id == 0:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=False)
                 else:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)

@@ -81,8 +81,10 @@ class clientProto(Client):
         """
 
         # 加载训练数据
-        trainloader = self.load_train_data()
-
+        if no_poison:
+            trainloader = self.load_train_data()
+        else:
+            trainloader = self.load_train_poison_data()
         start_time = time.time()
 
         # 将模型设置为训练模式
@@ -117,7 +119,7 @@ class clientProto(Client):
                 # print(rep)
                 if not no_poison:
                     # print(self.id,"poison")
-                    noise = add_gaussian_noise(rep, mean=0, std=0.1)
+                    noise = add_gaussian_noise(rep, mean=0, std=1)
                     noise = noise.to(self.device)
                     rep = rep + noise
                 # 如果定义了全局原型，则在损失函数中加入对原型的更新
@@ -299,6 +301,7 @@ def turn_np(protos):
         protos_np[label] = proto_list.clone().detach().cpu().data.numpy()
     return protos_np
 
-def add_gaussian_noise(tensor, mean=0, std=1.0):
+
+def add_gaussian_noise(tensor, mean=1, std=0.5):
     noise = torch.randn(tensor.size()) * std + mean
     return noise

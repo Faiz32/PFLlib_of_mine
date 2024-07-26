@@ -144,16 +144,8 @@ class FedProto(Server):
             if self.kde:
                 key_max = malicious_list[1] - 0.0001
                 key_min = malicious_list[-3] + 0.0001
-                """
-                if client.sum_malicious < key_min and round > 5:
-                    # if client.history_Credibility > 3:
-                    print("client " + str(client.id) + " is malicious, skip")
-                    self.uploaded_protos.append(client.protos)
-                    self.uploaded_protos_var.append(client.protos_var)
-                    self.uploaded_protos_skewness.append(client.protos_skewness)
-                    # client.history_Credibility += 1
-                """
-                if client.sum_malicious > key_max and round > 5:
+
+                if client.sum_malicious <= key_min and round > 5:
                     # if client.history_Credibility > 3:
                     print("client " + str(client.id) + " is malicious, skip")
                     self.uploaded_protos.append(client.protos)
@@ -166,6 +158,15 @@ class FedProto(Server):
                     self.uploaded_protos_skewness.append(client.protos_skewness)
                     if client.history_Credibility > 0:
                         client.history_Credibility -= 1
+                """
+                if client.sum_malicious > key_max and round > 5:
+                    # if client.history_Credibility > 3:
+                    print("client " + str(client.id) + " is malicious, skip")
+                    self.uploaded_protos.append(client.protos)
+                    self.uploaded_protos_var.append(client.protos_var)
+                    self.uploaded_protos_skewness.append(client.protos_skewness)
+                    # client.history_Credibility += 1
+                """
             else:
                 # 不防御
                 self.uploaded_protos.append(client.protos)

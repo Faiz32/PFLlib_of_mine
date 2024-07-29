@@ -40,7 +40,7 @@ def delete_files(folder_path):
 
 
 # Allocate data to users
-def generate_dataset(dir_path, num_clients, niid, balance, partition, class_per_client):
+def generate_dataset(dir_path, num_clients, niid, balance, partition):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
@@ -48,10 +48,6 @@ def generate_dataset(dir_path, num_clients, niid, balance, partition, class_per_
     config_path = dir_path + "config.json"
     train_path = dir_path + "train/"
     test_path = dir_path + "test/"
-    if os.path.exists(config_path):
-        os.remove(config_path)
-    delete_files(train_path)
-    delete_files(test_path)
 
     if check(config_path, train_path, test_path, num_clients, niid, balance, partition):
         return
@@ -92,7 +88,7 @@ def generate_dataset(dir_path, num_clients, niid, balance, partition, class_per_
     #     dataset.append(dataset_image[idx])
 
     X, y, statistic = separate_data((dataset_image, dataset_label), num_clients, num_classes,
-                                    niid, balance, partition, class_per_client=class_per_client)
+                                    niid, balance, partition, class_per_client=9)
     train_data, test_data = split_data(X, y)
     save_file(config_path, train_path, test_path, train_data, test_data, num_clients, num_classes,
               statistic, niid, balance, partition)
@@ -102,6 +98,5 @@ if __name__ == "__main__":
     niid = True if sys.argv[1] == "noniid" else False
     balance = True if sys.argv[2] == "balance" else False
     partition = sys.argv[3] if sys.argv[3] != "-" else None
-    class_per_client = int(sys.argv[4]) if sys.argv[4] != "-" else None
 
-    generate_dataset(dir_path, num_clients, niid, balance, partition, class_per_client)
+    generate_dataset(dir_path, num_clients, niid, balance, partition)

@@ -48,10 +48,7 @@ def generate_dataset(dir_path, num_clients, niid, balance, partition, class_per_
     config_path = dir_path + "config.json"
     train_path = dir_path + "train/"
     test_path = dir_path + "test/"
-    if os.path.exists(config_path):
-        os.remove(config_path)
-    delete_files(train_path)
-    delete_files(test_path)
+
 
     if check(config_path, train_path, test_path, num_clients, niid, balance, partition):
         return
@@ -93,7 +90,7 @@ def generate_dataset(dir_path, num_clients, niid, balance, partition, class_per_
     #     dataset.append(dataset_image[idx])
 
     X, y, statistic = separate_data((dataset_image, dataset_label), num_clients, num_classes,
-                                    niid, balance, partition, class_per_client=class_per_client)
+                                    niid, balance, partition, class_per_client=2)
     train_data, test_data = split_data(X, y)
     save_file(config_path, train_path, test_path, train_data, test_data, num_clients, num_classes,
               statistic, niid, balance, partition)

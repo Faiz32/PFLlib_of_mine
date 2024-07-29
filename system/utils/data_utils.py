@@ -84,7 +84,14 @@ def read_client_poison_data(dataset, idx, is_train=True):
         train_data = read_data(dataset, idx, is_train)
         X_train = torch.Tensor(train_data['x']).type(torch.float32)
         y_train = torch.Tensor(train_data['y']).type(torch.int64)
+        # print("y_train", y_train)
 
+        for i in range(len(y_train)):
+            y_train[i] = (y_train[i]+1)%(torch.max(y_train)+1)
+
+
+
+        """
         poison_label = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         # np.random.shuffle(poison_label)
         y_train = label_flipping(y_train, poison_label[0], poison_label[3])
@@ -92,6 +99,7 @@ def read_client_poison_data(dataset, idx, is_train=True):
         y_train = label_flipping(y_train, poison_label[2], poison_label[5])
         y_train = label_flipping(y_train, poison_label[6], poison_label[7])
         y_train = label_flipping(y_train, poison_label[8], poison_label[9])
+        """
 
         train_data = [(x, y) for x, y in zip(X_train, y_train)]
         return train_data

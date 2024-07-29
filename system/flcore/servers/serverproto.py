@@ -71,7 +71,7 @@ class FedProto(Server):
 
             for client in self.selected_clients:
                 # print(j)
-                if client.id == 1 or client.id == 0:
+                if client.id == 0 or client.id == 1 or client.id == 2:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=False)
                 else:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
@@ -142,28 +142,23 @@ class FedProto(Server):
         for client in self.selected_clients:
             self.uploaded_ids.append(client.id)
             if self.kde:
-                key_max = malicious_list[0] - 0.0001
-                key_min = malicious_list[-1] + 0.0001
+                key_max = malicious_list[2] - 0.0001
+                #key_min = malicious_list[-1] + 0.0001
+                """
                 if client.sum_malicious < key_min and round > 5:
                     # if client.history_Credibility > 3:
                     print("client " + str(client.id) + " is malicious, skip")
-                    self.uploaded_protos.append(client.protos)
-                    self.uploaded_protos_var.append(client.protos_var)
-                    self.uploaded_protos_skewness.append(client.protos_skewness)
                     # client.history_Credibility += 1
-                elif client.sum_malicious > key_max and round > 5:
+                """
+                if (client.sum_malicious > key_max and round < 3) or client.history_Credibility >= 2:
                     # if client.history_Credibility > 3:
                     print("client " + str(client.id) + " is malicious, skip")
-                    self.uploaded_protos.append(client.protos)
-                    self.uploaded_protos_var.append(client.protos_var)
-                    self.uploaded_protos_skewness.append(client.protos_skewness)
-                    # client.history_Credibility += 1
+                    client.history_Credibility += 1
                 else:
                     self.uploaded_protos.append(client.protos)
                     self.uploaded_protos_var.append(client.protos_var)
                     self.uploaded_protos_skewness.append(client.protos_skewness)
-                    if client.history_Credibility > 0:
-                        client.history_Credibility -= 1
+                    client.history_Credibility -= 1
             else:
                 # 不防御
                 self.uploaded_protos.append(client.protos)

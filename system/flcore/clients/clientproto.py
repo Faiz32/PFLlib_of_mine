@@ -268,7 +268,7 @@ class clientProto(Client):
                         if type(self.global_protos[y_c]) != type([]):
                             proto_new[i, :] = self.global_protos[y_c].data
                     loss += self.loss_mse(proto_new, rep) * self.lamda
-                train_num += y.shape[0]
+                train_num += y.shape[0]1
                 losses += loss.item() * y.shape[0]
 
         # self.model.cpu()

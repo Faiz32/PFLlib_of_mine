@@ -219,7 +219,7 @@ class clientProto(Client):
         test_acc = 0
         test_num = 0
 
-        if self.global_protos is not None:
+        if self.global_protos is not None:1
             with torch.no_grad():
                 for x, y in testloaderfull:
                     if type(x) == type([]):

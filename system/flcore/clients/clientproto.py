@@ -72,7 +72,8 @@ class clientProto(Client):
 
         self.lamda = args.lamda
         self.beta = args.beta
-        self.gamma = 1.0
+        # self.beta = 3.0
+        self.gamma = 0.0
 
     def train(self):
         """

@@ -24,97 +24,41 @@ from flcore.clients.clientbase import Client
 from collections import defaultdict
 
 
-def compute_variance(prototypes):
-    """
-    计算每个类别原型的方差。
-    """
-    variances = {}
-    for label, reps in prototypes.items():
-        if len(reps) > 1:
-            stacked_reps = torch.stack(reps, dim=0)
-            variances[label] = torch.var(stacked_reps, dim=0)
-        else:
-            variances[label] = torch.zeros_like(reps[0])
-    return variances
-
-
-def compute_skewness(prototypes):
-    """
-    计算每个类别原型的方差。
-    """
-    skewness_dict = {}
-    for label, reps in prototypes.items():
-        if len(reps) > 1:
-            skewness_dict[label] = skewness(reps)
-        else:
-            skewness_dict[label] = torch.zeros_like(reps[0])
-    return skewness_dict
-
-
-def skewness(prototypes):
-    x = torch.stack(prototypes, dim=0)
-    mean = torch.mean(x, dim=0)
-    std = torch.std(x, dim=0)
-    return torch.mean((torch.div((x - mean), std)).pow(3), dim=0)
-
-
 class clientProto(Client):
     def __init__(self, args, id, train_samples, test_samples, **kwargs):
         super().__init__(args, id, train_samples, test_samples, **kwargs)
 
         self.protos = None
-        self.protos_var = None
-        self.protos_skewness = None
         self.global_protos = None
-        self.global_protos_var = None
-        self.global_protos_skewness = None
         self.loss_mse = nn.MSELoss()
 
         self.lamda = args.lamda
-        self.beta = args.beta
-        # self.beta = 3.0
-        self.gamma = 0.0
 
     def train(self):
-        """
-        训练模型的过程。
-        此函数不接受参数，也不返回值。
-        """
-
-        # 加载训练数据
         trainloader = self.load_train_data()
         start_time = time.time()
 
-        # 将模型设置为训练模式
+        # self.model.to(self.device)
         self.model.train()
 
-        # 根据是否进行慢速训练，随机确定本地训练轮数
         max_local_epochs = self.local_epochs
         if self.train_slow:
             max_local_epochs = np.random.randint(1, max_local_epochs // 2)
 
         protos = defaultdict(list)
-        protos_var = defaultdict(list)
-        protos_skewness = defaultdict(list)
         for epoch in range(max_local_epochs):
             for i, (x, y) in enumerate(trainloader):
-                # 将数据移动到指定设备上
                 if type(x) == type([]):
                     x[0] = x[0].to(self.device)
                 else:
                     x = x.to(self.device)
                 y = y.to(self.device)
-
-                # 如果设置为慢速训练，则随机睡眠以模拟延迟
                 if self.train_slow:
                     time.sleep(0.1 * np.abs(np.random.rand()))
-
-                # 前向传播
                 rep = self.model.base(x)
                 output = self.model.head(rep)
                 loss = self.loss(output, y)
 
-                # 如果定义了全局原型，则在损失函数中加入对原型的更新
                 if self.global_protos is not None:
                     proto_new = copy.deepcopy(rep.detach())
                     for i, yy in enumerate(y):
@@ -123,60 +67,34 @@ class clientProto(Client):
                             proto_new[i, :] = self.global_protos[y_c].data
                     loss += self.loss_mse(proto_new, rep) * self.lamda
 
-                # 记录每个类别对应的特征表示
                 for i, yy in enumerate(y):
                     y_c = yy.item()
                     protos[y_c].append(rep[i, :].detach().data)
 
-                for protos_key, protos_value in protos.items():
-                    protos_var[protos_key].append(torch.var(torch.stack(protos_value, dim=0), dim=0))
-                    protos_skewness[protos_key].append(skewness(protos_value))
-
-                if self.global_protos_var is not None:
-                    rep_var = compute_variance(protos)
-                    for i, yy in enumerate(y):
-                        y_c = yy.item()
-                        if self.global_protos_var[y_c] is not None:
-                            proto_var_new = self.global_protos_var[y_c].data
-                            loss += self.loss_mse(rep_var[y_c], proto_var_new) * self.beta
-
-                if self.global_protos_skewness is not None:
-                    rep_skewness = compute_skewness(protos)
-                    for i, yy in enumerate(y):
-                        y_c = yy.item()
-                        if self.global_protos_skewness[y_c] is not None:
-                            proto_skewness_new = self.global_protos_skewness[y_c].data
-                            loss += self.loss_mse(rep_skewness[y_c], proto_skewness_new) * self.gamma
-
-                # 反向传播和参数更新
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
-        # 更新全局原型并应用学习率衰减
+        # self.model.cpu()
+        # rep = self.model.base(x)
+        # print(torch.sum(rep!=0).item() / rep.numel())
+
+        # self.collect_protos()
         self.protos = agg_func(protos)
-        self.protos_var = agg_func(protos_var)
-        self.protos_skewness = agg_func(protos_skewness)
 
         if self.learning_rate_decay:
             self.learning_rate_scheduler.step()
 
-        # 更新训练时间统计
         self.train_time_cost['num_rounds'] += 1
         self.train_time_cost['total_cost'] += time.time() - start_time
 
     def set_protos(self, global_protos):
         self.global_protos = global_protos
 
-    def set_protos_var(self, global_protos_var):
-        self.global_protos_var = global_protos_var
-
-    def set_protos_skewness(self, global_protos_skewness):
-        self.global_protos_skewness = global_protos_skewness
-
     def collect_protos(self):
         trainloader = self.load_train_data()
         self.model.eval()
+
         protos = defaultdict(list)
         with torch.no_grad():
             for i, (x, y) in enumerate(trainloader):

@@ -15,10 +15,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import torch
 import torch.nn as nn
 from torch import Tensor
 from typing import Any, Callable, List, Optional
 
+class OutputNorm1(nn.Module):
+    def __init__(self, num_channel, num_feature):
+        super().__init__()
+        self.num_channel = num_channel
+        self.gamma = nn.Parameter(torch.ones(num_channel))
+        self.beta = nn.Parameter(torch.zeros(num_channel, num_feature))
+
+    def forward(self, x):
+        if self.num_channel == 1:
+            x = self.gamma * x
+            x = x + self.beta
+            return x
+        if self.num_channel == 3:
+            return torch.einsum('...ijk, i->...ijk', x, self.gamma) + self.beta
 
 def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1) -> nn.Conv2d:
     """3x3 convolution with padding"""
@@ -168,7 +183,8 @@ class ResNet(nn.Module):
         replace_stride_with_dilation: Optional[List[bool]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None, 
         has_bn = True,
-        bn_block_num = 4, 
+        bn_block_num = 4,
+
     ) -> None:
         super(ResNet, self).__init__()
         if norm_layer is None:
@@ -206,8 +222,9 @@ class ResNet(nn.Module):
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten()
         )
+        self.bn = OutputNorm1(1,512)
         self.fc = nn.Linear(features[len(layers)-1] * block.expansion, num_classes)
-
+        #self.bn = OutputNorm1(1, 512)
         # self.fc = nn.Sequential(
         #     nn.AdaptiveAvgPool2d((1, 1)), 
         #     nn.Flatten(), 
@@ -270,6 +287,8 @@ class ResNet(nn.Module):
             x = layer(x)
 
         x = self.avgpool(x)
+        #x = self.fc(x)
+        x = self.bn(x)
         x = self.fc(x)
 
         return x

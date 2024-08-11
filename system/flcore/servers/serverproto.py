@@ -44,12 +44,14 @@ class FedProto(Server):
         self.global_protos_skewness = [None for _ in range(args.num_classes)]
         self.max_malicious = 0
         self.kde = args.kde
+        self.num_clients = args.num_clients
 
     def train(self):
         client_Proto_list = {}
         client_Proto_var_list = {}
         client_Proto_skewness_list = {}
         #client_Proto_queues = deque({}, maxlen=2)
+        labels_clients_distance = {}
         self.max_malicious = 0
         for i in range(self.global_rounds + 1):
             s_t = time.time()
@@ -71,7 +73,7 @@ class FedProto(Server):
 
             for client in self.selected_clients:
                 # print(j)
-                if client.id == 1 or client.id == 2 :
+                if client.id == 1 or client.id == 2:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=False)
                 else:
                     protos_np, protos_var_np, protos_skewness_np = client.train(no_poison=True)
@@ -158,15 +160,6 @@ class FedProto(Server):
                     self.uploaded_protos_skewness.append(client.protos_skewness)
                     if client.history_Credibility > 0:
                         client.history_Credibility -= 1
-                """
-                if client.sum_malicious > key_max and round > 5:
-                    # if client.history_Credibility > 3:
-                    print("client " + str(client.id) + " is malicious, skip")
-                    self.uploaded_protos.append(client.protos)
-                    self.uploaded_protos_var.append(client.protos_var)
-                    self.uploaded_protos_skewness.append(client.protos_skewness)
-                    # client.history_Credibility += 1
-                """
             else:
                 # 不防御
                 self.uploaded_protos.append(client.protos)

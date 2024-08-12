@@ -18,7 +18,7 @@
 import time
 import numpy as np
 import torch
-from KDE import put_proto, get_global_proto_kde, get_malicious
+from KDE_old import put_proto, get_global_proto_kde, get_malicious
 from flcore.clients.clientproto import clientProto
 from flcore.servers.serverbase import Server
 from threading import Thread

@@ -18,7 +18,7 @@
 import time
 import numpy as np
 import torch
-from KDE_old import put_proto, get_global_proto_kde, get_malicious
+from KDE import put_proto, get_global_proto_kde, get_malicious, get_distance, get_euclidean_distance
 from flcore.clients.clientproto import clientProto
 from flcore.servers.serverbase import Server
 from threading import Thread
@@ -85,17 +85,25 @@ class FedProto(Server):
             global_proto_kde = get_global_proto_kde(global_proto_np_list, global_proto_kde)
             # global_proto_var_kde = get_global_proto_kde(global_proto_var_np_list, global_proto_var_kde)
             # global_proto_skewness_kde = get_global_proto_kde(global_proto_skewness_np_list, global_proto_skewness_kde)
+            """
             for client in self.selected_clients:
                 malicious_this_round = get_malicious(client_Proto_list[client.id], global_proto_kde)
                 # client.malicious = malicious_this_round
                 client.malicious_queue.append(malicious_this_round)
                 client.sum_malicious = sum(client.malicious_queue)
-                # print("last 5 malicious for " + str(client.id) + ":", client.sum_malicious)
-                # print("differ for " + str(client.id) + ":", client.differ_mean)
-                # print(str(client.id), client.sum_malicious, client.differ_mean,client.sum_malicious * client.differ_mean)
                 print("%-4s: %18s" % (str(client.id), str(client.sum_malicious)))
-                # print("differ for " + str(client.id) + ":", client.protos_differ)
-            # print("max malicious:", self.max_malicious)
+            """
+            euclidean_distance_matrix = np.full((self.num_clients, self.num_clients), -1, dtype=float)
+            for client_x in self.selected_clients:
+                for client_y in self.selected_clients:
+                    if client_x.id >= client_y.id:
+                        continue
+                    euclidean_distance_matrix[client_x.id, client_y.id] = get_euclidean_distance(
+                        client_Proto_list[client_x.id],
+                        client_Proto_list[client_y.id])
+                    euclidean_distance_matrix[client_y.id, client_x.id] = euclidean_distance_matrix[
+                        client_x.id, client_y.id]
+
             self.receive_protos(round=i)
 
             self.global_protos = proto_aggregation(self.uploaded_protos)

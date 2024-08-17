@@ -21,9 +21,9 @@ import numpy as np
 import gc
 from sklearn.model_selection import train_test_split
 
-batch_size = 10
+batch_size = 64
 train_ratio = 0.75 # merge original training set and test set, then split it manually. 
-alpha = 0.1 # for Dirichlet distribution. 100 for exdir
+alpha = 0.8 # for Dirichlet distribution. 100 for exdir
 
 def check(config_path, train_path, test_path, num_clients, niid=False, 
         balance=True, partition=None):

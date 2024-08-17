@@ -70,3 +70,5 @@ def get_euclidean_distance(client_x_Proto, clent_y_Proto):
                 label_distance = np.linalg.norm(x_value - y_value)
                 label_distance_list.append(label_distance)
     return np.mean(label_distance_list)
+
+

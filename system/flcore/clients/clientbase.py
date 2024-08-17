@@ -52,8 +52,9 @@ class Client(object):
         self.old_protos_for_labels = {}
         self.new_protos_for_labels = {}
         self.differ = {}
-        self.differ_mean=0
-
+        self.differ_mean = 0
+        self.distance_mean = 0
+        self.neighbor_k_list = []
 
         self.update = True
         self.history_Credibility = 0

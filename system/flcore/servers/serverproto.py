@@ -18,7 +18,7 @@
 import time
 import numpy as np
 import torch
-from KDE import put_proto, get_global_proto_kde, get_malicious, get_distance, get_euclidean_distance
+from KDE import put_proto, get_global_proto_kde, get_malicious, get_euclidean_distance
 from flcore.clients.clientproto import clientProto
 from flcore.servers.serverbase import Server
 from threading import Thread
@@ -103,6 +103,20 @@ class FedProto(Server):
                         client_Proto_list[client_y.id])
                     euclidean_distance_matrix[client_y.id, client_x.id] = euclidean_distance_matrix[
                         client_x.id, client_y.id]
+            for client in self.selected_clients:
+                neighbor_list = euclidean_distance_matrix[client.id]
+                num_all_neighbors = len(neighbor_list)
+                neighbor_list = neighbor_list[neighbor_list >= 0]
+                num_k_neighbors = len(neighbor_list)
+                k = 0
+                if num_k_neighbors < round(num_all_neighbors * 0.4):
+                    k = num_k_neighbors
+                else:
+                    k = int(num_all_neighbors * 0.4)
+                neighbor_list = np.sort(neighbor_list)
+                neighbor_k_list = neighbor_list[:k]
+                client.distance_mean = neighbor_k_list.mean()
+                client.neighbor_k_list = neighbor_k_list
 
             self.receive_protos(round=i)
 
